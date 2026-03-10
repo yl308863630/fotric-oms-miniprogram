@@ -41,3 +41,12 @@ sf-express:
 logging:
   level:
     com.oms: DEBUG
+
+# 钉钉机器人配置
+dingtalk:
+  # 是否启用钉钉机器人通知
+  enabled: false
+  # 钉钉机器人 Webhook 地址
+  webhook-url: https://oapi.dingtalk.com/robot/send?access_token=YOUR_ACCESS_TOKEN
+  # 加签密钥（可选，如果设置了加签需要填写）
+  secret: ""
