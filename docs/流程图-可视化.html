@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OMS 系统架构与业务流程图</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body { font-family: "Microsoft YaHei", sans-serif; margin: 20px; background: #f5f5f5; }
+    h1 { color: #333; border-bottom: 2px solid #409EFF; padding-bottom: 8px; }
+    h2 { color: #409EFF; margin-top: 32px; }
+    .diagram { background: #fff; padding: 20px; margin: 16px 0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .diagram-title { font-weight: bold; margin-bottom: 12px; color: #555; }
+    .mermaid { text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>OMS 订单系统 — 架构与业务流程图</h1>
+  <p>用于经验分享，可直接在浏览器中查看、截图或打印。</p>
+
+  <h2>1. 系统整体架构</h2>
+  <div class="diagram">
+    <div class="diagram-title">前后端分层与数据流</div>
+    <div class="mermaid">
+flowchart TB
+    subgraph 用户层
+        Browser[浏览器]
+    end
+    subgraph 前端["前端 (Vue 3 + Vite :3000)"]
+        Router[Vue Router]
+        Pages[页面/视图]
+        API[Axios /api]
+    end
+    subgraph 后端["后端 (Spring Boot :8080)"]
+        Security[Spring Security + JWT]
+        Controllers[Controller 层]
+        Services[Service 层]
+        Repositories[JPA Repository]
+    end
+    subgraph 数据层
+        MySQL[(MySQL oms_db)]
+    end
+    Browser --> Router
+    Router --> Pages
+    Pages --> API
+    API --> Security
+    Security --> Controllers
+    Controllers --> Services
+    Services --> Repositories
+    Repositories --> MySQL
+    </div>
+  </div>
+
+  <h2>2. 登录认证流程</h2>
+  <div class="diagram">
+    <div class="diagram-title">用户登录与 JWT 发放</div>
+    <div class="mermaid">
+sequenceDiagram
+    participant U as 用户
+    participant F as 前端
+    participant A as AuthController
+    participant AM as AuthenticationManager
+    participant JWT as JwtTokenUtil
+    participant DB as UserRepository
+    U->>F: 输入用户名/密码
+    F->>A: POST /api/auth/login
+    A->>AM: authenticate(username, password)
+    AM->>DB: loadUserByUsername
+    DB-->>AM: UserDetails
+    AM-->>A: 认证成功
+    A->>JWT: generateToken(userDetails)
+    JWT-->>A: JWT 字符串
+    A->>DB: 查询 User(realName, companyTitle)
+    A-->>F: token, username, realName...
+    F->>F: localStorage.setItem token
+    F->>U: 跳转首页
+    </div>
+  </div>
+
+  <h2>3. 从商机到结算的业务链路</h2>
+  <div class="diagram">
+    <div class="diagram-title">核心业务模块串联</div>
+    <div class="mermaid">
+flowchart LR
+    A[商机管理] --> B[销售订单]
+    B --> C[合同管理]
+    C --> D[发货/物流]
+    D --> E[对账单]
+    E --> F[结算单]
+    style A fill:#e1f5fe
+    style B fill:#fff3e0
+    style C fill:#f3e5f5
+    style D fill:#e8f5e9
+    style E fill:#fce4ec
+    style F fill:#efebe9
+    </div>
+  </div>
+
+  <h2>4. 销售订单状态流转</h2>
+  <div class="diagram">
+    <div class="diagram-title">销售订单生命周期</div>
+    <div class="mermaid">
+stateDiagram-v2
+    [*] --> 待指派: 新建订单
+    待指派 --> 待确认订单: 指派给交付方
+    待指派 --> 已取消: 取消
+    待确认订单 --> 待合同盖章: 交付方确认
+    待确认订单 --> 已退回: 退回
+    已退回 --> 待指派: 重新指派
+    待合同盖章 --> 已发货: 合同盖章并发货
+    已发货 --> 已到货: 客户签收
+    已到货 --> 已对账: 生成对账单
+    已对账 --> 已开票: 对账单开票
+    已开票 --> 已支付: 客户付款
+    已支付 --> 平台已支付: 平台回款
+    平台已支付 --> [*]
+    </div>
+  </div>
+
+  <h2>5. 销售订单详细流程（角色与操作）</h2>
+  <div class="diagram">
+    <div class="diagram-title">工业电商侧 → 交付方侧 → 结算侧</div>
+    <div class="mermaid">
+flowchart TB
+    subgraph 工业电商侧
+        A1[创建销售订单] --> A2[生成 OMS 订单号]
+        A2 --> A3[状态: 待指派]
+        A3 --> A4[指派给交付方]
+        A4 --> A5[状态: 待确认订单]
+    end
+    subgraph 交付方侧
+        B1[接收指派] --> B2{确认 or 退回}
+        B2 -->|确认| B3[状态: 待合同盖章]
+        B2 -->|退回| B4[状态: 已退回]
+        B3 --> B5[上传合同/盖章]
+        B5 --> B6[维护发货信息]
+        B6 --> B7[状态: 已发货]
+        B7 --> B8[维护签收/到货]
+        B8 --> B9[状态: 已到货]
+    end
+    subgraph 结算侧
+        C1[选择订单生成对账单] --> C2[对账单状态流转]
+        C2 --> C3[从对账单生成结算单]
+        C3 --> C4[对账单: SETTLED]
+    end
+    A5 --> B1
+    B4 --> A3
+    B9 --> C1
+    </div>
+  </div>
+
+  <h2>6. 对账单与结算单</h2>
+  <div class="diagram">
+    <div class="diagram-title">对账单 → 结算单 状态关系</div>
+    <div class="mermaid">
+flowchart LR
+    subgraph 对账单
+        I1[DRAFT] --> I2[PENDING]
+        I2 --> I3[CONFIRMED]
+        I3 --> I4[APPLIED]
+        I4 --> I5[INVOICED]
+    end
+    subgraph 结算单
+        S1[DRAFT] --> S2[PENDING]
+        S2 --> S3[SETTLED]
+    end
+    I5 --> |生成结算单| S1
+    S3 --> I6[SETTLED]
+    </div>
+  </div>
+
+  <h2>7. 合同管理流程</h2>
+  <div class="diagram">
+    <div class="diagram-title">合同创建到生效</div>
+    <div class="mermaid">
+flowchart TB
+    A[合同列表/创建] --> B[关联销售订单]
+    B --> C[选择合同模板]
+    C --> D[填写甲方/乙方/金额]
+    D --> E[生成 PDF / 电子签章]
+    E --> F[上传合同文件]
+    F --> G[合同状态: 草稿→生效]
+    G --> H[同步销售订单状态]
+    </div>
+  </div>
+
+  <h2>8. 采购订单流程</h2>
+  <div class="diagram">
+    <div class="diagram-title">采购订单与销售订单关联</div>
+    <div class="mermaid">
+flowchart LR
+    A[创建采购订单] --> B[关联销售订单/OMS订单号]
+    B --> C[状态: 待确认]
+    C --> D[确认/执行采购]
+    D --> E[付款状态/对账状态]
+    E --> F[完成]
+    </div>
+  </div>
+
+  <h2>9. 实体关系（概念）</h2>
+  <div class="diagram">
+    <div class="diagram-title">核心实体关联</div>
+    <div class="mermaid">
+erDiagram
+    User ||--o{ SalesOrder : creates
+    User ||--o{ SalesOrder : assigned
+    User ||--o{ PurchaseOrder : creates
+    SalesOrder ||--o| Contract : has
+    SalesOrder ||--o| OrderShipment : has
+    SalesOrder }o--o{ Invoice : 对账
+    Invoice ||--o| Settlement : 生成结算单
+    ContractTemplate ||--o{ Contract : template
+    PartnerInfo ||--o{ Contract : partner
+    Opportunity ||--o{ OpportunityProduct : products
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'neutral',
+      flowchart: { useMaxWidth: true, htmlLabels: true },
+      sequence: { useMaxWidth: true },
+      stateDiagram: { useMaxWidth: true }
+    });
+  </script>
+</body>
+</html>

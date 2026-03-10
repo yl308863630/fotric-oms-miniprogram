@@ -1,0 +1,3 @@
+E:\订单系统\oms-backend [0:] $ trae-sandbox 'mvn org.springframework.boot:spring-boot-maven-plugin:run'
+
+mvn spring-boot:run
