@@ -52,7 +52,7 @@ public class SecurityConfig {
                     return corsConfiguration;
                 }))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/register", "/uploads/**", "/api/files/**", "/api/upload", "/api/debug/**", "/api/barcode/**", "/api/contracts/seal-test", "/api/logistics/query").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/register", "/uploads/**", "/api/files/**", "/api/upload", "/api/debug/**", "/api/barcode/**", "/api/contracts/seal-test", "/api/logistics/query", "/api/dingtalk/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
