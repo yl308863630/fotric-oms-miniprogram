@@ -1,0 +1,52 @@
+server:
+  port: 8080
+  # 仅监听本机，避免后端/数据库被外网直连；外网只通过 ngrok 暴露前端(3000)，API 经 Vite 代理到本机 8080
+  address: 127.0.0.1
+
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/oms_db?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: YOUR_DATABASE_PASSWORD
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  jackson:
+    date-format: yyyy-MM-dd
+    time-format: HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+
+# 顺丰速运独立 API（路由查询、服务网点查询）
+# 文档：https://qiao.sf-express.com/Api/ApiDetails?apiServiceCode=EXP_RECE_SEARCH_ROUTES
+sf-express:
+  partner-id: YOUR_SF_PARTNER_ID
+  sandbox-checkword: YOUR_SF_SANDBOX_CHECKWORD
+  prod-checkword: YOUR_SF_PROD_CHECKWORD
+  prod-url: https://bspgw.sf-express.com/std/service
+  hk-url: https://sfapi-hk.sf-express.com/std/service
+  sandbox-url: https://sfapi-sbox.sf-express.com/std/service
+  use-prod: false
+
+# 钉钉机器人配置
+dingtalk:
+  # 是否启用钉钉机器人通知
+  enabled: false
+  # 钉钉机器人 Webhook 地址
+  webhook-url: https://oapi.dingtalk.com/robot/send?access_token=YOUR_DINGTALK_ACCESS_TOKEN
+  # 加签密钥（可选，如果设置了加签需要填写）
+  secret: ""
+
+logging:
+  level:
+    com.oms: DEBUG
