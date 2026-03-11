@@ -37,6 +37,9 @@ public class SalesOrderService {
     @Autowired
     private OperationLogService operationLogService;
 
+    @Autowired
+    private DingTalkService dingTalkService;
+
     public Page<SalesOrder> searchOrders(String omsOrderNo, String platformOrderNo, String status, String platformRefundStatus, String offlineSales, String needReceiptSlip, Pageable pageable) {
         // 获取当前登录用户
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -298,6 +301,21 @@ public class SalesOrderService {
         System.out.println("Saving order to database...");
         SalesOrder savedOrder = salesOrderRepository.save(order);
         System.out.println("Order saved successfully, ID: " + savedOrder.getId());
+        
+        // 如果是新订单，发送钉钉通知
+        if (order.getId() == null) {
+            try {
+                dingTalkService.sendOrderNotification(
+                    savedOrder.getOmsOrderNo(),
+                    savedOrder.getFinalCustomerTitle() != null ? savedOrder.getFinalCustomerTitle() : "未填写客户",
+                    savedOrder.getProductName() != null ? savedOrder.getProductName() : "未填写商品",
+                    savedOrder.getTaxIncludedTotal() != null ? savedOrder.getTaxIncludedTotal() : java.math.BigDecimal.ZERO
+                );
+            } catch (Exception e) {
+                System.err.println("发送钉钉新订单通知失败: " + e.getMessage());
+            }
+        }
+        
         return savedOrder;
     }
 
@@ -375,6 +393,20 @@ public class SalesOrderService {
                 ? currentUser.getRealName() : currentUsername;
         operationLogService.log(operatorName, "状态变更", "SALES_ORDER", String.valueOf(id),
                 "状态由 " + (oldStatus != null ? oldStatus : "") + " 改为 " + status);
+        
+        // 如果状态变为"已发货"，发送物流通知
+        if ("已发货".equals(status) && order.getTrackingNumber() != null && !order.getTrackingNumber().isEmpty()) {
+            try {
+                dingTalkService.sendLogisticsNotification(
+                    saved.getOmsOrderNo(),
+                    saved.getTrackingNumber(),
+                    "已发货"
+                );
+            } catch (Exception e) {
+                System.err.println("发送钉钉物流更新通知失败: " + e.getMessage());
+            }
+        }
+        
         return saved;
     }
 

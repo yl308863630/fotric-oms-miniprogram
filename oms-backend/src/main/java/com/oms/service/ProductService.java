@@ -25,6 +25,9 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private DingTalkService dingTalkService;
+
     @Transactional
     public void importProducts(MultipartFile file) throws Exception {
         List<Product> products = new ArrayList<>();
@@ -171,7 +174,22 @@ public class ProductService {
         existingProduct.setRemark(product.getRemark());
         existingProduct.setImage(product.getImage());
         
-        return productRepository.save(existingProduct);
+        Product savedProduct = productRepository.save(existingProduct);
+        
+        // 库存低于10时发送预警
+        if (product.getStock() != null && product.getStock() < 10) {
+            try {
+                dingTalkService.sendStockWarning(
+                    savedProduct.getName() != null ? savedProduct.getName() : "未命名商品",
+                    savedProduct.getCode() != null ? savedProduct.getCode() : "未编码",
+                    product.getStock()
+                );
+            } catch (Exception e) {
+                System.err.println("发送钉钉库存预警通知失败: " + e.getMessage());
+            }
+        }
+        
+        return savedProduct;
     }
 
     @Transactional
