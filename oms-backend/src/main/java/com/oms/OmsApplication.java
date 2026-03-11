@@ -7,12 +7,14 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.scheduling.annotation.EnableScheduling;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.io.File;
 import java.nio.file.Files;
 
 @SpringBootApplication
+@EnableScheduling
 public class OmsApplication {
     public static void main(String[] args) {
         SpringApplication.run(OmsApplication.class, args);

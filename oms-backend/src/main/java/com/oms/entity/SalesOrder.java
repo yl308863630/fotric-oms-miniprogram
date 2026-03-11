@@ -186,6 +186,9 @@ public class SalesOrder {
     // 签收时间
     private LocalDateTime receiptTime;
 
+    // 是否需要签收单回传
+    private Boolean needReceiptSlip;
+
     // 交货日期
     private LocalDate deliveryDate;
 

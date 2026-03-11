@@ -18,4 +18,7 @@ public interface SalesOrderRepository extends JpaRepository<SalesOrder, Long>, J
 
     // 链路单幂等：同一来源单 + 同一创建人，取最新
     Optional<SalesOrder> findFirstByPurchaseOrderNoAndCreatedByOrderByIdDesc(String purchaseOrderNo, Long createdBy);
+
+    // 查找已发货且需要签收单回传的订单
+    List<SalesOrder> findByStatusAndNeedReceiptSlip(String status, Boolean needReceiptSlip);
 }
