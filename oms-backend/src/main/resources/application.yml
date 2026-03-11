@@ -45,8 +45,8 @@ logging:
 # 钉钉机器人配置
 dingtalk:
   # 是否启用钉钉机器人通知
-  enabled: false
+  enabled: true
   # 钉钉机器人 Webhook 地址
-  webhook-url: https://oapi.dingtalk.com/robot/send?access_token=YOUR_ACCESS_TOKEN
+  webhook-url: https://oapi.dingtalk.com/robot/send?access_token=7a1cef57e603d8ecca56c969b08f85e0b3fad9d07d0dbd91297353009db82975
   # 加签密钥（可选，如果设置了加签需要填写）
-  secret: ""
+  secret: "SEC8cb687ffa9fcb936ac9a0f8e1ce8c10b9b382006b2ec088eef4b0b9c0f187864"

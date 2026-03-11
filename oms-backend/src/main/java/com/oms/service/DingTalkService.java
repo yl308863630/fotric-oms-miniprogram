@@ -24,6 +24,10 @@ public class DingTalkService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public void sendTextMessage(String content) {
+        sendTextMessage(content, null);
+    }
+
+    public void sendTextMessage(String content, List<String> atMobiles) {
         if (!dingTalkConfig.getEnabled()) {
             return;
         }
@@ -34,10 +38,22 @@ public class DingTalkService {
         text.put("content", content);
         message.put("text", text);
         
+        // 添加@指定人
+        if (atMobiles != null && !atMobiles.isEmpty()) {
+            Map<String, Object> at = new HashMap<>();
+            at.put("atMobiles", atMobiles);
+            at.put("isAtAll", false);
+            message.put("at", at);
+        }
+        
         sendMessage(message);
     }
 
     public void sendMarkdownMessage(String title, String text) {
+        sendMarkdownMessage(title, text, null);
+    }
+
+    public void sendMarkdownMessage(String title, String text, List<String> atMobiles) {
         if (!dingTalkConfig.getEnabled()) {
             return;
         }
@@ -49,10 +65,22 @@ public class DingTalkService {
         markdown.put("text", text);
         message.put("markdown", markdown);
         
+        // 添加@指定人
+        if (atMobiles != null && !atMobiles.isEmpty()) {
+            Map<String, Object> at = new HashMap<>();
+            at.put("atMobiles", atMobiles);
+            at.put("isAtAll", false);
+            message.put("at", at);
+        }
+        
         sendMessage(message);
     }
 
     public void sendOrderNotification(String orderNo, String customerName, String productName, BigDecimal amount) {
+        sendOrderNotification(orderNo, customerName, productName, amount, null);
+    }
+
+    public void sendOrderNotification(String orderNo, String customerName, String productName, BigDecimal amount, List<String> atMobiles) {
         String title = "📦 新订单通知";
         String text = String.format(
             "## 📦 新订单通知\n\n" +
@@ -64,10 +92,14 @@ public class DingTalkService {
             "*来自 OMS 订单系统*",
             orderNo, customerName, productName, amount
         );
-        sendMarkdownMessage(title, text);
+        sendMarkdownMessage(title, text, atMobiles);
     }
 
     public void sendLogisticsNotification(String orderNo, String trackingNumber, String status) {
+        sendLogisticsNotification(orderNo, trackingNumber, status, null);
+    }
+
+    public void sendLogisticsNotification(String orderNo, String trackingNumber, String status, List<String> atMobiles) {
         String title = "🚚 物流更新通知";
         String text = String.format(
             "## 🚚 物流更新通知\n\n" +
@@ -78,10 +110,14 @@ public class DingTalkService {
             "*来自 OMS 订单系统*",
             orderNo, trackingNumber, status
         );
-        sendMarkdownMessage(title, text);
+        sendMarkdownMessage(title, text, atMobiles);
     }
 
     public void sendStockWarning(String productName, String productCode, Integer stock) {
+        sendStockWarning(productName, productCode, stock, null);
+    }
+
+    public void sendStockWarning(String productName, String productCode, Integer stock, List<String> atMobiles) {
         String title = "⚠️ 库存预警";
         String text = String.format(
             "## ⚠️ 库存预警\n\n" +
@@ -93,7 +129,7 @@ public class DingTalkService {
             "*来自 OMS 订单系统*",
             productName, productCode, stock
         );
-        sendMarkdownMessage(title, text);
+        sendMarkdownMessage(title, text, atMobiles);
     }
 
     private void sendMessage(Map<String, Object> message) {

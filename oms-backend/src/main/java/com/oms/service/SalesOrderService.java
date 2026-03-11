@@ -305,11 +305,18 @@ public class SalesOrderService {
         // 如果是新订单，发送钉钉通知
         if (order.getId() == null) {
             try {
+                // 获取创建者的手机号用于@通知
+                List<String> atMobiles = new ArrayList<>();
+                if (currentUser != null && currentUser.getPhone() != null && !currentUser.getPhone().isEmpty()) {
+                    atMobiles.add(currentUser.getPhone());
+                }
+                
                 dingTalkService.sendOrderNotification(
                     savedOrder.getOmsOrderNo(),
                     savedOrder.getFinalCustomerTitle() != null ? savedOrder.getFinalCustomerTitle() : "未填写客户",
                     savedOrder.getProductName() != null ? savedOrder.getProductName() : "未填写商品",
-                    savedOrder.getTaxIncludedTotal() != null ? savedOrder.getTaxIncludedTotal() : java.math.BigDecimal.ZERO
+                    savedOrder.getTaxIncludedTotal() != null ? savedOrder.getTaxIncludedTotal() : java.math.BigDecimal.ZERO,
+                    atMobiles
                 );
             } catch (Exception e) {
                 System.err.println("发送钉钉新订单通知失败: " + e.getMessage());
