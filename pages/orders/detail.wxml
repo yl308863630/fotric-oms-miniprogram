@@ -191,19 +191,19 @@
   <!-- 底部操作栏 -->
   <view class="bottom-bar" wx:if="{{detail}}">
     <view class="action-btn-list">
-      <view class="action-btn" bindtap="openActionModal" data-type="confirm" wx:if="{{detail.status === '待确认订单'}}">
+      <view class="action-btn" bindtap="openActionModal" data-type="confirm" wx:if="{{detail.status === '待确认订单' && canConfirm}}">
         <text>确认</text>
       </view>
-      <view class="action-btn" bindtap="openActionModal" data-type="ship" wx:if="{{detail.status === '待合同盖章'}}">
+      <view class="action-btn" bindtap="openActionModal" data-type="ship" wx:if="{{detail.status === '待合同盖章' && canShip}}">
         <text>发货</text>
       </view>
-      <view class="action-btn" bindtap="openActionModal" data-type="receipt" wx:if="{{detail.status === '已发货'}}">
+      <view class="action-btn" bindtap="openActionModal" data-type="receipt" wx:if="{{detail.status === '已发货' && canUploadReceipt}}">
         <text>签收单</text>
       </view>
-      <view class="action-btn primary" bindtap="openActionModal" data-type="settle" wx:if="{{detail.status === '已对账未开票' || detail.status === '已开票待结算'}}">
+      <view class="action-btn primary" bindtap="openActionModal" data-type="settle" wx:if="{{(detail.status === '已对账未开票' || detail.status === '已开票待结算') && canSettle}}">
         <text>结算</text>
       </view>
-      <view class="action-btn" bindtap="openActionModal" data-type="erp">
+      <view class="action-btn" bindtap="openActionModal" data-type="erp" wx:if="{{canErpEntry}}">
         <text>ERP录单</text>
       </view>
     </view>

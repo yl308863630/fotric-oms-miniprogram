@@ -16,7 +16,7 @@
         bindtap="onStatusChange"
       >{{item.label}}</view>
     </scroll-view>
-    <view class="add-btn" bindtap="goToCreate">+ 新建</view>
+    <view class="add-btn" bindtap="goToCreate" wx:if="{{canCreateOrder}}">+ 新建</view>
   </view>
   
   <!-- 订单列表 -->
@@ -47,18 +47,16 @@
       
       <view class="card-footer">
         <text class="time">{{item.createTime}}</text>
-        <view class="tags" wx:if="{{item.offlineSales === '是'}}">
-          <text class="tag offline">线下</text>
+        <view class="tags">
+          <text class="tag offline" wx:if="{{item.offlineSales === '是'}}">线下</text>
         </view>
       </view>
     </view>
     
-    <!-- 空状态 -->
     <view class="empty" wx:if="{{!orders.length && !loading}}">
       <text>暂无订单</text>
     </view>
     
-    <!-- 加载更多 -->
     <view class="load-more" wx:if="{{loading}}">
       <text>加载中...</text>
     </view>
@@ -67,24 +65,28 @@
     </view>
   </scroll-view>
 
-  <!-- 操作菜单 -->
+  <!-- 操作菜单（根据权限显示） -->
   <view class="action-sheet-mask" wx:if="{{actionSheetVisible}}" bindtap="hideActionSheet"></view>
   <view class="action-sheet {{actionSheetVisible ? 'show' : ''}}">
-    <view class="action-item" bindtap="handleConfirm">
+    <view class="action-item" bindtap="handleConfirm" wx:if="{{canConfirm}}">
       <text class="action-icon">✓</text>
       <text>确认订单</text>
     </view>
-    <view class="action-item" bindtap="handleShip">
+    <view class="action-item" bindtap="handleShip" wx:if="{{canShip}}">
       <text class="action-icon">🚚</text>
       <text>发货</text>
     </view>
-    <view class="action-item" bindtap="handleReceipt">
+    <view class="action-item" bindtap="handleReceipt" wx:if="{{canUploadReceipt}}">
       <text class="action-icon">📄</text>
       <text>上传签收单</text>
     </view>
-    <view class="action-item" bindtap="handleSettle">
+    <view class="action-item" bindtap="handleSettle" wx:if="{{canSettle}}">
       <text class="action-icon">💰</text>
       <text>结算</text>
+    </view>
+    <view class="action-item" bindtap="handleErp" wx:if="{{canErpEntry}}">
+      <text class="action-icon">📝</text>
+      <text>ERP录单</text>
     </view>
     <view class="action-item" bindtap="handleContract">
       <text class="action-icon">📃</text>

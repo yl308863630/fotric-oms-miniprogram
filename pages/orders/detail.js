@@ -7,7 +7,15 @@ Page({
     id: null,
     detail: null,
     loading: true,
-    action: null, // 从列表页传来的操作指令
+    action: null,
+    
+    // 权限
+    canConfirm: false,
+    canShip: false,
+    canSettle: false,
+    canErpEntry: false,
+    canUploadReceipt: false,
+    canCreateOrder: false,
     
     // 操作弹窗
     showActionModal: false,
@@ -19,9 +27,9 @@ Page({
       logisticsCompany: '',
       trackingNumber: ''
     },
-    // 签收单上传
     receiptFile: null,
     receiptUrl: '',
+    
     // 结算表单
     settleForm: {
       invoiceNumber: '',
@@ -29,6 +37,7 @@ Page({
       partyReconciliationNo: '',
       settlementNo: ''
     },
+    
     // 商务录单
     erpForm: {
       erpEntryStatus: '',
@@ -38,6 +47,7 @@ Page({
   },
 
   onLoad(options) {
+    this.checkPermissions();
     if (options.id) {
       this.setData({ id: options.id, action: options.action });
       this.loadDetail();
@@ -50,16 +60,24 @@ Page({
     }
   },
 
+  // 检查权限
+  checkPermissions() {
+    this.setData({
+      canConfirm: app.hasPermission('confirm_order'),
+      canShip: app.hasPermission('ship'),
+      canSettle: app.hasPermission('settle'),
+      canErpEntry: app.hasPermission('erp_entry'),
+      canUploadReceipt: app.hasPermission('upload_receipt'),
+      canCreateOrder: app.hasPermission('create_order')
+    });
+  },
+
   async loadDetail() {
     this.setData({ loading: true });
     try {
       const res = await salesOrderApi.get(this.data.id);
-      this.setData({ 
-        detail: res, 
-        loading: false 
-      });
+      this.setData({ detail: res, loading: false });
       
-      // 如果有操作指令，自动打开对应弹窗
       if (this.data.action) {
         this.handleAction(this.data.action);
       }
@@ -73,19 +91,29 @@ Page({
   handleAction(action) {
     switch(action) {
       case 'confirm':
-        this.setData({ showActionModal: true, actionType: 'confirm' });
+        if (this.data.canConfirm) {
+          this.setData({ showActionModal: true, actionType: 'confirm' });
+        }
         break;
       case 'ship':
-        this.setData({ showActionModal: true, actionType: 'ship' });
+        if (this.data.canShip) {
+          this.setData({ showActionModal: true, actionType: 'ship' });
+        }
         break;
       case 'settle':
-        this.setData({ showActionModal: true, actionType: 'settle' });
+        if (this.data.canSettle) {
+          this.setData({ showActionModal: true, actionType: 'settle' });
+        }
         break;
       case 'receipt':
-        this.setData({ showActionModal: true, actionType: 'receipt' });
+        if (this.data.canUploadReceipt) {
+          this.setData({ showActionModal: true, actionType: 'receipt' });
+        }
         break;
       case 'erp':
-        this.setData({ showActionModal: true, actionType: 'erp' });
+        if (this.data.canErpEntry) {
+          this.setData({ showActionModal: true, actionType: 'erp' });
+        }
         break;
     }
   },
@@ -93,19 +121,35 @@ Page({
   // 打开操作弹窗
   openActionModal(e) {
     const type = e.currentTarget.dataset.type;
-    this.setData({ 
-      showActionModal: true, 
-      actionType: type 
-    });
+    
+    // 权限检查
+    if (type === 'confirm' && !this.data.canConfirm) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
+    if (type === 'ship' && !this.data.canShip) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
+    if (type === 'settle' && !this.data.canSettle) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
+    if (type === 'erp' && !this.data.canErpEntry) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
+    if (type === 'receipt' && !this.data.canUploadReceipt) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
+    
+    this.setData({ showActionModal: true, actionType: type });
   },
 
   // 关闭弹窗
   closeModal() {
-    this.setData({ 
-      showActionModal: false, 
-      actionType: '',
-      action: null 
-    });
+    this.setData({ showActionModal: false, actionType: '', action: null });
   },
 
   // ========== 发货 ==========
@@ -162,7 +206,6 @@ Page({
     this.setData({ actionLoading: true });
 
     try {
-      // 上传文件
       const uploadRes = await new Promise((resolve, reject) => {
         wx.uploadFile({
           url: `${app.globalData.apiBase}/api/files/upload`,

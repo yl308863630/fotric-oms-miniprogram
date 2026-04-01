@@ -1,5 +1,6 @@
 // 订单列表页面
 const { salesOrderApi } = require('../../utils/request');
+const app = getApp();
 
 Page({
   data: {
@@ -9,12 +10,18 @@ Page({
     hasMore: true,
     loading: false,
     statusFilter: '',
-    // 搜索
     searchKeyword: '',
-    // 操作菜单
     actionSheetVisible: false,
     currentOrder: null,
-    // 状态选项
+    
+    // 当前用户权限
+    canCreateOrder: false,
+    canConfirm: false,
+    canShip: false,
+    canSettle: false,
+    canErpEntry: false,
+    canUploadReceipt: false,
+    
     statusOptions: [
       { value: '', label: '全部' },
       { value: '待指派', label: '待指派' },
@@ -29,12 +36,32 @@ Page({
   },
 
   onLoad() {
+    this.checkPermissions();
     this.loadOrders();
   },
 
   onShow() {
     this.setData({ page: 0, orders: [], hasMore: true });
     this.loadOrders();
+  },
+
+  // 检查权限
+  checkPermissions() {
+    const canCreateOrder = app.hasPermission('create_order');
+    const canConfirm = app.hasPermission('confirm_order');
+    const canShip = app.hasPermission('ship');
+    const canSettle = app.hasPermission('settle');
+    const canErpEntry = app.hasPermission('erp_entry');
+    const canUploadReceipt = app.hasPermission('upload_receipt');
+    
+    this.setData({
+      canCreateOrder,
+      canConfirm,
+      canShip,
+      canSettle,
+      canErpEntry,
+      canUploadReceipt
+    });
   },
 
   onPullDownRefresh() {
@@ -79,7 +106,6 @@ Page({
     }
   },
 
-  // 搜索
   onSearch(e) {
     const keyword = e.detail.value;
     this.setData({ 
@@ -91,25 +117,21 @@ Page({
     this.loadOrders();
   },
 
-  // 筛选状态
   onStatusChange(e) {
     const status = e.currentTarget.dataset.status;
     this.setData({ statusFilter: status, page: 0, orders: [], hasMore: true });
     this.loadOrders();
   },
 
-  // 新建订单
   goToCreate() {
     wx.navigateTo({ url: '/pages/orders/create' });
   },
 
-  // 查看详情
   goToDetail(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({ url: `/pages/orders/detail?id=${id}` });
   },
 
-  // 显示操作菜单
   showActionSheet(e) {
     const order = e.currentTarget.dataset.item;
     this.setData({
@@ -118,7 +140,6 @@ Page({
     });
   },
 
-  // 隐藏操作菜单
   hideActionSheet() {
     this.setData({
       actionSheetVisible: false,
@@ -126,43 +147,54 @@ Page({
     });
   },
 
-  // 操作：确认订单
+  // 根据权限判断是否显示操作
   handleConfirm() {
+    if (!this.data.canConfirm) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
     this.hideActionSheet();
-    wx.navigateTo({ 
-      url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=confirm` 
-    });
+    wx.navigateTo({ url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=confirm` });
   },
 
-  // 操作：发货
   handleShip() {
+    if (!this.data.canShip) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
     this.hideActionSheet();
-    wx.navigateTo({ 
-      url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=ship` 
-    });
+    wx.navigateTo({ url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=ship` });
   },
 
-  // 操作：结算
   handleSettle() {
+    if (!this.data.canSettle) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
     this.hideActionSheet();
-    wx.navigateTo({ 
-      url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=settle` 
-    });
+    wx.navigateTo({ url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=settle` });
   },
 
-  // 操作：上传签收单
   handleReceipt() {
+    if (!this.data.canUploadReceipt) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
     this.hideActionSheet();
-    wx.navigateTo({ 
-      url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=receipt` 
-    });
+    wx.navigateTo({ url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=receipt` });
   },
 
-  // 操作：查看合同
   handleContract() {
     this.hideActionSheet();
-    wx.navigateTo({ 
-      url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=contract` 
-    });
+    wx.navigateTo({ url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=contract` });
+  },
+
+  handleErp() {
+    if (!this.data.canErpEntry) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
+    this.hideActionSheet();
+    wx.navigateTo({ url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=erp` });
   }
 });
