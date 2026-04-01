@@ -1,5 +1,6 @@
 // 新建销售订单页面
 const { salesOrderApi, productApi, partnerApi } = require('../../utils/request');
+const app = getApp();
 
 Page({
   data: {
@@ -13,7 +14,9 @@ Page({
       contactPhone: '',     // 电话
       deliveryAddress: '',  // 收货地址
       remark: '',           // 备注
-      items: []             // 商品明细
+      items: [],             // 商品明细
+      contractFile: null,    // 合同文件
+      contractUrl: ''        // 合同URL
     },
     // 商品选择弹窗
     showProductPicker: false,
@@ -62,6 +65,78 @@ Page({
   },
   onRemarkInput(e) {
     this.setData({ 'formData.remark': e.detail.value });
+  },
+
+  // 上传合同
+  uploadContract() {
+    wx.chooseMessageFile({
+      count: 1,
+      type: 'file',
+      success: (res) => {
+        const file = res.tempFiles[0];
+        this.setData({ 'formData.contractFile': file });
+        this.parseContract(file);
+      }
+    });
+  },
+
+  // 解析合同（OCR）
+  async parseContract(file) {
+    wx.showLoading({ title: '正在解析合同...' });
+    try {
+      // 上传文件到服务器
+      const uploadRes = await new Promise((resolve, reject) => {
+        wx.uploadFile({
+          url: `${app.globalData.apiBase}/api/files/upload`,
+          filePath: file.path,
+          name: 'file',
+          success: resolve,
+          fail: reject
+        });
+      });
+
+      const parseData = JSON.parse(uploadRes.data);
+      if (parseData.url) {
+        // 调用OCR解析
+        const ocrRes = await new Promise((resolve, reject) => {
+          wx.request({
+            url: `${app.globalData.apiBase}/api/contracts/parse`,
+            method: 'POST',
+            data: { fileUrl: parseData.url },
+            success: resolve,
+            fail: reject
+          });
+        });
+
+        const result = ocrRes.data;
+        if (result.success && result.data) {
+          // 自动填充解析结果
+          const data = result.data;
+          wx.showToast({ title: '合同解析成功', icon: 'success' });
+          
+          // 如果解析出甲方名称，尝试匹配合作方
+          if (data.partyAName) {
+            this.setData({ 'formData.partyATitle': data.partyAName });
+          }
+          // 如果解析出金额
+          if (data.amount) {
+            // 可以设置到备注或其他字段
+            this.setData({ 'formData.remark': `合同金额：¥${data.amount}` });
+          }
+          this.setData({ 'formData.contractUrl': parseData.url });
+        }
+      }
+    } catch (err) {
+      console.error('合同解析失败:', err);
+      wx.showToast({ title: '解析失败，请重试', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+    }
+  },
+
+  // 删除合同
+  removeContract() {
+    this.setData({ 'formData.contractFile': null, 'formData.contractUrl': '' });
   },
 
   // 选择甲方
@@ -148,7 +223,8 @@ Page({
 
   // 修改商品数量
   onQuantityChange(e) {
-    const { index, value } = e.detail;
+    const index = e.currentTarget.dataset.index;
+    const value = e.detail.value;
     const items = [...this.data.formData.items];
     items[index].quantity = parseInt(value) || 1;
     this.setData({ 'formData.items': items });
@@ -156,7 +232,8 @@ Page({
 
   // 修改商品单价
   onPriceChange(e) {
-    const { index, value } = e.detail;
+    const index = e.currentTarget.dataset.index;
+    const value = e.detail.value;
     const items = [...this.data.formData.items];
     items[index].price = parseFloat(value) || 0;
     this.setData({ 'formData.items': items });

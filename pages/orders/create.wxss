@@ -25,10 +25,81 @@
   margin-bottom: 20rpx;
 }
 
+.section-tip {
+  font-size: 22rpx;
+  color: #999;
+  font-weight: normal;
+}
+
 .add-btn {
   color: #1890ff;
   font-size: 26rpx;
   font-weight: normal;
+}
+
+/* 合同上传 */
+.contract-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 0;
+  background: #f9f9f9;
+  border: 2rpx dashed #ddd;
+  border-radius: 12rpx;
+}
+
+.upload-icon {
+  width: 80rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  text-align: center;
+  font-size: 48rpx;
+  color: #1890ff;
+  background: #e6f7ff;
+  border-radius: 50%;
+  margin-bottom: 16rpx;
+}
+
+.upload-text {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.upload-hint {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.contract-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx;
+  background: #f9f9f9;
+  border-radius: 12rpx;
+}
+
+.contract-info {
+  flex: 1;
+}
+
+.contract-name {
+  font-size: 28rpx;
+  color: #333;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.contract-status {
+  font-size: 24rpx;
+  color: #52c41a;
+}
+
+.remove-contract {
+  color: #ff4d4f;
+  font-size: 26rpx;
 }
 
 .form-item {
