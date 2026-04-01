@@ -84,3 +84,17 @@
   color: rgba(255, 255, 255, 0.6);
   font-size: 24rpx;
 }
+
+.debug-info {
+  margin-top: 30rpx;
+  padding: 20rpx;
+  background: rgba(0,0,0,0.3);
+  border-radius: 10rpx;
+  width: 100%;
+}
+
+.debug-info text {
+  color: #fff;
+  font-size: 22rpx;
+  word-break: break-all;
+}

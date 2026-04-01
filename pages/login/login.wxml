@@ -5,40 +5,26 @@
     <text class="title">FOTRIC OMS</text>
     <text class="subtitle">订单管理系统</text>
   </view>
-  
+
   <view class="login-form">
     <view class="form-item">
       <image class="form-icon" src="/images/user.png" mode="aspectFit"></image>
-      <input 
-        class="form-input" 
-        type="text" 
-        placeholder="请输入用户名" 
-        value="{{username}}"
-        bindinput="onUsernameInput"
-      />
+      <input class="form-input" type="text" placeholder="请输入用户名" value="{{username}}" bindinput="onUsernameInput" />
     </view>
-    
     <view class="form-item">
       <image class="form-icon" src="/images/password.png" mode="aspectFit"></image>
-      <input 
-        class="form-input" 
-        type="password" 
-        placeholder="请输入密码" 
-        value="{{password}}"
-        bindinput="onPasswordInput"
-      />
+      <input class="form-input" type="password" placeholder="请输入密码" value="{{password}}" bindinput="onPasswordInput" />
     </view>
-    
-    <button 
-      class="login-btn" 
-      type="primary" 
-      loading="{{loading}}"
-      bindtap="handleLogin"
-    >
+    <button class="login-btn" type="primary" loading="{{loading}}" bindtap="handleLogin">
       {{loading ? '登录中...' : '登 录'}}
     </button>
   </view>
-  
+
+  <!-- 调试信息 -->
+  <view class="debug-info" wx:if="{{debugInfo}}">
+    <text>{{debugInfo}}</text>
+  </view>
+
   <view class="login-footer">
     <text>© 2026 FOTRIC 飞础科</text>
   </view>
