@@ -9,6 +9,10 @@ Page({
     loading: true,
     action: null,
     
+    // 子订单（主链视角）
+    childOrders: [],
+    childOrdersLoading: false,
+    
     // 权限
     canConfirm: false,
     canShip: false,
@@ -110,6 +114,9 @@ Page({
       if (this.data.action) {
         this.handleAction(this.data.action);
       }
+      
+      // 加载子订单（主链视角）
+      this.loadChildOrders();
     } catch (err) {
       wx.showToast({ title: '加载失败', icon: 'none' });
       this.setData({ loading: false });
@@ -515,5 +522,26 @@ Page({
   // ========== 返回列表 ==========
   goBack() {
     wx.navigateBack();
+  },
+  
+  // ========== 主链视角：加载子订单 ==========
+  async loadChildOrders() {
+    try {
+      this.setData({ childOrdersLoading: true });
+      const res = await salesOrderApi.getChildren(this.data.id);
+      this.setData({ 
+        childOrders: res || [],
+        childOrdersLoading: false 
+      });
+    } catch (err) {
+      console.error('加载子订单失败:', err);
+      this.setData({ childOrdersLoading: false });
+    }
+  },
+  
+  // 查看子订单详情
+  goToChildDetail(e) {
+    const id = e.currentTarget.dataset.id;
+    wx.navigateTo({ url: `/pages/orders/detail?id=${id}` });
   }
 });

@@ -125,6 +125,30 @@
       <view class="empty" wx:else>暂无商品</view>
     </view>
 
+    <!-- 主链视角：子订单 -->
+    <view class="section" wx:if="{{childOrders.length > 0}}">
+      <view class="section-title">
+        <text>子订单</text>
+        <text class="section-count">{{childOrders.length}}单</text>
+      </view>
+      <view class="child-order-list">
+        <view class="child-order-card" wx:for="{{childOrders}}" wx:key="id" data-id="{{item.id}}" bindtap="goToChildDetail">
+          <view class="child-header">
+            <text class="child-no">{{item.platformOrderNo || item.omsOrderNo}}</text>
+            <text class="child-status {{item.status}}">{{item.status}}</text>
+          </view>
+          <view class="child-info">
+            <text>交付方：{{item.deliveryParty || '-'}}</text>
+            <text class="child-amount">¥{{item.amount || 0}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="section" wx:elif="{{childOrdersLoading}}">
+      <view class="section-title">子订单</view>
+      <view class="loading-small">加载中...</view>
+    </view>
+
     <!-- 物流信息 -->
     <view class="section" wx:if="{{detail.shippingParty || detail.platformReconciliationNo}}">
       <view class="section-title">物流信息</view>
