@@ -1,0 +1,66 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+build/
+.cache/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+nohup.out
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Uploads
+uploads/
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.docx
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# Configuration files (contains secrets)
+oms-backend/src/main/resources/application.yml
+**/application-prod.yml

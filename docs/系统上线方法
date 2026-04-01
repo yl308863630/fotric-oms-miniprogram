@@ -1,0 +1,119 @@
+对于个人项目，我给您推荐几个科学的更新版本的方法：
+
+## 🎯 最简单的方法（适合个人项目）
+### 方法1：Git 版本控制 + 直接部署（推荐）
+```
+# 在本地开发
+git add .
+git commit -m "更新商品编辑功能"
+git push
+
+# 在服务器上
+cd /path/to/your/project
+git pull  # 直接拉取最新代码
+# 然后重启服务
+```
+优点：
+
+- 有版本历史，随时可以回滚
+- 只传输变更的文件，速度快
+- 简单易用
+## 🛠️ 稍专业一点的方法
+### 方法2：使用简易部署脚本
+在服务器上创建一个 deploy.sh 脚本：
+
+```
+#!/bin/bash
+echo "正在拉取最新代码..."
+git pull
+
+echo "停止服务..."
+pkill -f "java -jar"
+pkill -f "npm run dev"
+
+echo "重新构建后端..."
+cd oms-backend
+mvn clean package -DskipTests
+
+echo "重新构建前端..."
+cd ../oms-frontend
+npm install
+npm run build
+cp -r dist/* ../oms-backend/src/main/resources/
+static/
+
+echo "启动服务..."
+cd ../oms-backend
+nohup java -jar target/oms-backend.jar > app.
+log 2>&1 &
+```
+使用：
+
+```
+chmod +x deploy.sh
+./deploy.sh
+```
+## 📦 不需要删除旧文件夹的方法
+### 方法3：使用软链接（推荐）
+```
+/your/project/
+├── oms-v1.0/    # 旧版本
+├── oms-v1.1/    # 新版本
+└── current -> oms-v1.1/  # 软链接指向当前版本
+```
+更新步骤：
+
+1. 上传新版本到 oms-v1.1/
+2. 停止旧服务
+3. 修改软链接： ln -sf oms-v1.1 current
+4. 启动新服务
+5. 如果有问题，快速切回： ln -sf oms-v1.0 current
+## 💡 我的建议（适合您的情况）
+对于个人项目，我推荐：
+
+1. 使用 Git 管理代码 （最简单）
+   
+   - 本地开发，提交代码
+   - 服务器上 git pull 拉取
+   - 重启服务
+2. 保留旧版本备份
+   
+   - 更新前先备份当前文件夹
+   - 有问题可以快速回滚
+3. 使用简单的检查清单
+   
+   ```
+   ✅ 本地测试通过
+   ✅ 备份服务器当前版本
+   ✅ 上传/拉取新代码
+   ✅ 重启服务
+   ✅ 快速测试关键功能
+   ```
+
+
+   git仓库的建立
+   Git用户信息已设置！
+
+现在我需要您在GitHub上手动创建仓库并生成Personal Access Token（因为需要浏览器操作）。请按以下步骤操作：
+
+## 📝 步骤1：在GitHub上创建新仓库
+1. 打开浏览器，访问： https://github.com/new
+2. 仓库名称填写： oms-order-system （或您喜欢的名字）
+3. 选择 Private （私有仓库）或 Public （公开仓库）
+4. 不要 勾选 "Initialize this repository with a README"
+5. 点击 Create repository
+## 🔑 步骤2：生成Personal Access Token
+1. 访问： https://github.com/settings/tokens
+2. 点击 Generate new token → Generate new token (classic)
+3. 填写：
+   - Note: OMS System Access
+   - Expiration: 选择 No expiration （或您喜欢的时间）
+   - 勾选 scopes: repo （完整仓库访问权限）
+4. 点击 Generate token
+5. 重要！ 复制生成的token（类似 ghp_xxxxxxxxxxxx ），只显示一次！
+## 🚀 步骤3：连接本地仓库到GitHub
+完成上面两步后，告诉我您的：
+
+- 仓库名称（例如： oms-order-system ）
+- 生成的Personal Access Token
+然后我会帮您完成剩余的设置

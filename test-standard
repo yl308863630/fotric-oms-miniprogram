@@ -1,0 +1,5 @@
+cd tests
+npx playwright install chromium   # 首次
+node standard-flow-e2e.js
+# 或
+npm run test:standard

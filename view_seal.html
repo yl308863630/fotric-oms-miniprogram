@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电子章预览</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .seal-preview {
+            text-align: center;
+            margin: 40px 0;
+            padding: 40px;
+            background: repeating-linear-gradient(
+                45deg,
+                #f0f0f0,
+                #f0f0f0 10px,
+                #e0e0e0 10px,
+                #e0e0e0 20px
+            );
+            border-radius: 8px;
+        }
+        .seal-preview img {
+            max-width: 100%;
+        }
+        .info {
+            background-color: #e8f4f8;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 30px;
+        }
+        .info h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .info ul {
+            margin: 10px 0 0 20px;
+        }
+        .info li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖊️ 电子章预览 - 上海热像科技股份有限公司</h1>
+        
+        <div class="seal-preview">
+            <img src="test_seal.png" alt="电子章" />
+        </div>
+        
+        <div class="info">
+            <h3>电子章参数配置：</h3>
+            <ul>
+                <li>公司全称：上海热像科技股份有限公司</li>
+                <li>外圈文字半径：200px</li>
+                <li>文字排列方向：顺时针</li>
+                <li>文字角度扩展：320°</li>
+                <li>字体大小：64px</li>
+                <li>文字起始位置：250°</li>
+                <li>外圆：不规则波浪线外形</li>
+                <li>背景：PNG透明背景</li>
+                <li>效果：模拟真实盖印，边缘磨损、油墨浓淡变化、颗粒感</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
