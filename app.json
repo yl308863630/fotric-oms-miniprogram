@@ -4,6 +4,7 @@
     "pages/dashboard/dashboard",
     "pages/orders/orders",
     "pages/orders/detail",
+    "pages/orders/create",
     "pages/products/products",
     "pages/products/detail",
     "pages/partners/partners",

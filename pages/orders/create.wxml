@@ -1,0 +1,136 @@
+<!-- 新建销售订单 -->
+<view class="create-page">
+  <scroll-view scroll-y class="form-scroll">
+    <!-- 甲方选择 -->
+    <view class="form-section">
+      <view class="section-title">甲方信息</view>
+      <view class="form-item" bindtap="showPartyModal">
+        <text class="label">甲方名称 <text class="required">*</text></text>
+        <view class="input-wrapper">
+          <text class="{{formData.partyATitle ? 'value' : 'placeholder'}}">{{formData.partyATitle || '请选择甲方'}}</text>
+          <text class="arrow">></text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 平台信息 -->
+    <view class="form-section">
+      <view class="section-title">平台信息</view>
+      <view class="form-item">
+        <text class="label">平台 <text class="required">*</text></text>
+        <picker mode="selector" range="{{platformOptions}}" range-key="label" bindchange="onPlatformChange">
+          <view class="input-wrapper">
+            <text class="{{formData.platformName ? 'value' : 'placeholder'}}">{{formData.platformName || '请选择平台'}}</text>
+            <text class="arrow">></text>
+          </view>
+        </picker>
+      </view>
+      <view class="form-item">
+        <text class="label">平台订单号 <text class="required">*</text></text>
+        <input class="input" placeholder="请输入平台订单号" value="{{formData.platformOrderNo}}" bindinput="onPlatformOrderNoInput" />
+      </view>
+    </view>
+
+    <!-- 联系人信息 -->
+    <view class="form-section">
+      <view class="section-title">联系人信息</view>
+      <view class="form-item">
+        <text class="label">联系人 <text class="required">*</text></text>
+        <input class="input" placeholder="请输入联系人姓名" value="{{formData.contactName}}" bindinput="onContactNameInput" />
+      </view>
+      <view class="form-item">
+        <text class="label">联系电话 <text class="required">*</text></text>
+        <input class="input" type="number" maxlength="11" placeholder="请输入联系电话" value="{{formData.contactPhone}}" bindinput="onContactPhoneInput" />
+      </view>
+      <view class="form-item">
+        <text class="label">收货地址 <text class="required">*</text></text>
+        <input class="input" placeholder="请输入详细收货地址" value="{{formData.deliveryAddress}}" bindinput="onAddressInput" />
+      </view>
+    </view>
+
+    <!-- 商品明细 -->
+    <view class="form-section">
+      <view class="section-title">
+        <text>商品明细</text>
+        <text class="add-btn" bindtap="showProductModal">+ 添加商品</text>
+      </view>
+      
+      <view class="item-list" wx:if="{{formData.items.length}}">
+        <view class="item-card" wx:for="{{formData.items}}" wx:key="index">
+          <view class="item-header">
+            <text class="item-name">{{item.productName}}</text>
+            <text class="delete-btn" data-index="{{index}}" bindtap="removeItem">删除</text>
+          </view>
+          <view class="item-model" wx:if="{{item.model}}">型号：{{item.model}}</view>
+          <view class="item-row">
+            <view class="item-field">
+              <text class="field-label">单价</text>
+              <input class="field-input" type="digit" value="{{item.price}}" data-index="{{index}}" bindinput="onPriceChange" />
+            </view>
+            <view class="item-field">
+              <text class="field-label">数量</text>
+              <input class="field-input" type="number" value="{{item.quantity}}" data-index="{{index}}" bindinput="onQuantityChange" />
+            </view>
+            <view class="item-field">
+              <text class="field-label">小计</text>
+              <text class="field-amount">¥{{(item.price * item.quantity).toFixed(2)}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="empty-items" wx:else>
+        <text>请添加商品</text>
+      </view>
+    </view>
+
+    <!-- 备注 -->
+    <view class="form-section">
+      <view class="section-title">备注</view>
+      <textarea class="remark-input" placeholder="请输入备注信息（选填）" value="{{formData.remark}}" bindinput="onRemarkInput" />
+    </view>
+
+    <!-- 底部占位 -->
+    <view class="bottom-space"></view>
+  </scroll-view>
+
+  <!-- 底部提交按钮 -->
+  <view class="bottom-bar">
+    <view class="total-info">
+      <text class="total-label">合计：</text>
+      <text class="total-amount">¥{{calculateTotal()}}</text>
+    </view>
+    <button class="submit-btn" bindtap="submitOrder" loading="{{submitting}}">提交订单</button>
+  </view>
+
+  <!-- 甲方选择弹窗 -->
+  <view class="modal-mask" wx:if="{{showPartyPicker}}" bindtap="showPartyPicker=false"></view>
+  <view class="modal-bottom {{showPartyPicker ? 'show' : ''}}">
+    <view class="modal-header">
+      <text class="modal-title">选择甲方</text>
+      <text class="modal-close" bindtap="showPartyPicker=false">×</text>
+    </view>
+    <scroll-view scroll-y class="modal-content">
+      <view class="option-item" wx:for="{{partyList}}" wx:key="id" data-id="{{item.id}}" data-title="{{item.title}}" bindtap="selectParty">
+        <text>{{item.title}}</text>
+      </view>
+      <view class="load-more" wx:if="{{partyLoading}}">加载中...</view>
+    </scroll-view>
+  </view>
+
+  <!-- 商品选择弹窗 -->
+  <view class="modal-mask" wx:if="{{showProductPicker}}" bindtap="showProductPicker=false"></view>
+  <view class="modal-bottom {{showProductPicker ? 'show' : ''}}">
+    <view class="modal-header">
+      <text class="modal-title">选择商品</text>
+      <text class="modal-close" bindtap="showProductPicker=false">×</text>
+    </view>
+    <scroll-view scroll-y class="modal-content">
+      <view class="product-item" wx:for="{{productList}}" wx:key="id" bindtap="selectProduct" data-item="{{item}}">
+        <view class="product-name">{{item.name}}</view>
+        <view class="product-info" wx:if="{{item.model}}">型号：{{item.model}}</view>
+        <view class="product-price" wx:if="{{item.price}}">¥{{item.price}}</view>
+      </view>
+      <view class="load-more" wx:if="{{productLoading}}">加载中...</view>
+    </scroll-view>
+  </view>
+</view>

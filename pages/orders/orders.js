@@ -23,6 +23,12 @@ Page({
     this.loadOrders();
   },
 
+  onShow() {
+    // 返回时刷新
+    this.setData({ page: 0, orders: [], hasMore: true });
+    this.loadOrders();
+  },
+
   onPullDownRefresh() {
     this.setData({ page: 0, orders: [], hasMore: true });
     this.loadOrders().then(() => {
@@ -39,23 +45,14 @@ Page({
 
   async loadOrders() {
     if (this.data.loading || !this.data.hasMore) return;
-    
     this.setData({ loading: true });
-    
     try {
-      const params = {
-        page: this.data.page,
-        size: this.data.size
-      };
-      
+      const params = { page: this.data.page, size: this.data.size };
       if (this.data.statusFilter) {
         params.masterStatus = this.data.statusFilter;
       }
-      
       const res = await salesOrderApi.list(params);
-      
       const newOrders = res.content || [];
-      
       this.setData({
         orders: this.data.page === 0 ? newOrders : [...this.data.orders, ...newOrders],
         hasMore: newOrders.length >= this.data.size,
@@ -71,13 +68,13 @@ Page({
   // 筛选状态
   onStatusChange(e) {
     const status = e.currentTarget.dataset.status;
-    this.setData({ 
-      statusFilter: status, 
-      page: 0, 
-      orders: [], 
-      hasMore: true 
-    });
+    this.setData({ statusFilter: status, page: 0, orders: [], hasMore: true });
     this.loadOrders();
+  },
+
+  // 新建订单
+  goToCreate() {
+    wx.navigateTo({ url: '/pages/orders/create' });
   },
 
   // 查看详情

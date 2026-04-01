@@ -1,0 +1,295 @@
+/* 新建订单页面样式 */
+.create-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding-bottom: 120rpx;
+}
+
+.form-scroll {
+  height: 100vh;
+}
+
+.form-section {
+  background: #fff;
+  margin-bottom: 20rpx;
+  padding: 24rpx 32rpx;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.add-btn {
+  color: #1890ff;
+  font-size: 26rpx;
+  font-weight: normal;
+}
+
+.form-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.form-item:last-child {
+  border-bottom: none;
+}
+
+.form-item .label {
+  font-size: 28rpx;
+  color: #333;
+  min-width: 180rpx;
+}
+
+.required {
+  color: #ff4d4f;
+}
+
+.input-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.input-wrapper .value,
+.input-wrapper .placeholder {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.input-wrapper .placeholder {
+  color: #999;
+}
+
+.input-wrapper .arrow {
+  color: #ccc;
+  margin-left: 16rpx;
+}
+
+.input {
+  flex: 1;
+  text-align: right;
+  font-size: 28rpx;
+  color: #333;
+}
+
+/* 商品列表 */
+.item-list {
+  margin-top: 16rpx;
+}
+
+.item-card {
+  background: #f9f9f9;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.item-name {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.delete-btn {
+  color: #ff4d4f;
+  font-size: 24rpx;
+}
+
+.item-model {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 12rpx;
+}
+
+.item-row {
+  display: flex;
+  align-items: center;
+}
+
+.item-field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.field-label {
+  font-size: 24rpx;
+  color: #999;
+  margin-right: 8rpx;
+}
+
+.field-input {
+  width: 120rpx;
+  height: 56rpx;
+  background: #fff;
+  border: 1rpx solid #ddd;
+  border-radius: 8rpx;
+  text-align: center;
+  font-size: 26rpx;
+}
+
+.field-amount {
+  font-size: 28rpx;
+  color: #ff4d4f;
+  font-weight: 500;
+}
+
+.empty-items {
+  text-align: center;
+  padding: 60rpx 0;
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* 备注 */
+.remark-input {
+  width: 100%;
+  min-height: 160rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.bottom-space {
+  height: 140rpx;
+}
+
+/* 底部栏 */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -4rpx 12rpx rgba(0,0,0,0.08);
+}
+
+.total-info {
+  flex: 1;
+}
+
+.total-label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.total-amount {
+  font-size: 36rpx;
+  color: #ff4d4f;
+  font-weight: 600;
+}
+
+.submit-btn {
+  width: 240rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: #1890ff;
+  color: #fff;
+  font-size: 28rpx;
+  border-radius: 40rpx;
+  border: none;
+}
+
+/* 弹窗 */
+.modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+}
+
+.modal-bottom {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  max-height: 70vh;
+  transform: translateY(100%);
+  transition: transform 0.3s;
+  z-index: 101;
+}
+
+.modal-bottom.show {
+  transform: translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.modal-close {
+  font-size: 48rpx;
+  color: #999;
+}
+
+.modal-content {
+  height: 60vh;
+  padding: 0 32rpx;
+}
+
+.option-item,
+.product-item {
+  padding: 28rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.product-name {
+  font-size: 28rpx;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+}
+
+.product-info {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 8rpx;
+}
+
+.product-price {
+  font-size: 28rpx;
+  color: #ff4d4f;
+}
+
+.load-more {
+  text-align: center;
+  padding: 20rpx;
+  color: #999;
+  font-size: 24rpx;
+}
