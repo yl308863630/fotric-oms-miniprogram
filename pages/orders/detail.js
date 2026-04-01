@@ -1,5 +1,5 @@
 // 订单详情页
-const { salesOrderApi } = require('../../utils/request');
+const { salesOrderApi, partnerApi } = require('../../utils/request');
 const app = getApp();
 
 Page({
@@ -16,6 +16,10 @@ Page({
     canErpEntry: false,
     canUploadReceipt: false,
     canCreateOrder: false,
+    canAssign: false,
+    canReassign: false,
+    canReturn: false,
+    canEdit: false,
     
     // 操作弹窗
     showActionModal: false,
@@ -43,7 +47,21 @@ Page({
       erpEntryStatus: '',
       erpEntryScreenshotUrl: ''
     },
-    erpFile: null
+    erpFile: null,
+    
+    // 指派表单
+    assignForm: {
+      deliveryParty: '',
+      deliveryPartyId: null,
+      deliveryPartyPurchasePrice: '',
+      paymentMethod: '',
+      contractTemplate: ''
+    },
+    deliveryPartyList: [],
+    deliveryPartyLoading: false,
+    
+    // 编辑表单
+    editForm: {}
   },
 
   onLoad(options) {
@@ -68,7 +86,11 @@ Page({
       canSettle: app.hasPermission('settle'),
       canErpEntry: app.hasPermission('erp_entry'),
       canUploadReceipt: app.hasPermission('upload_receipt'),
-      canCreateOrder: app.hasPermission('create_order')
+      canCreateOrder: app.hasPermission('create_order'),
+      canAssign: app.hasPermission('assign_order'),
+      canReassign: app.hasPermission('reassign_order'),
+      canReturn: app.hasPermission('return_order'),
+      canEdit: app.hasPermission('edit_order')
     });
   },
 
@@ -76,7 +98,14 @@ Page({
     this.setData({ loading: true });
     try {
       const res = await salesOrderApi.get(this.data.id);
-      this.setData({ detail: res, loading: false });
+      this.setData({ 
+        detail: res, 
+        loading: false,
+        // 回填表单数据
+        'assignForm.deliveryParty': res.deliveryParty || '',
+        'assignForm.deliveryPartyPurchasePrice': res.deliveryPartyPurchasePrice || '',
+        'assignForm.paymentMethod': res.paymentMethod || ''
+      });
       
       if (this.data.action) {
         this.handleAction(this.data.action);
@@ -115,6 +144,16 @@ Page({
           this.setData({ showActionModal: true, actionType: 'erp' });
         }
         break;
+      case 'assign':
+        if (this.data.canAssign) {
+          this.setData({ showActionModal: true, actionType: 'assign' });
+        }
+        break;
+      case 'edit':
+        if (this.data.canEdit) {
+          this.setData({ showActionModal: true, actionType: 'edit' });
+        }
+        break;
     }
   },
 
@@ -122,7 +161,6 @@ Page({
   openActionModal(e) {
     const type = e.currentTarget.dataset.type;
     
-    // 权限检查
     if (type === 'confirm' && !this.data.canConfirm) {
       wx.showToast({ title: '无权限操作', icon: 'none' });
       return;
@@ -143,6 +181,22 @@ Page({
       wx.showToast({ title: '无权限操作', icon: 'none' });
       return;
     }
+    if (type === 'assign' && !this.data.canAssign) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
+    if (type === 'edit' && !this.data.canEdit) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
+    if (type === 'reassign' && !this.data.canReassign) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
+    if (type === 'return' && !this.data.canReturn) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
     
     this.setData({ showActionModal: true, actionType: type });
   },
@@ -150,6 +204,115 @@ Page({
   // 关闭弹窗
   closeModal() {
     this.setData({ showActionModal: false, actionType: '', action: null });
+  },
+
+  // ========== 指派 ==========
+  showDeliveryPartyPicker() {
+    this.setData({ deliveryPartyList: [], deliveryPartyLoading: true });
+    this.loadDeliveryPartyList();
+  },
+
+  async loadDeliveryPartyList() {
+    try {
+      const res = await partnerApi.list({ page: 0, size: 50, type: '乙方' });
+      this.setData({ 
+        deliveryPartyList: res.content || [],
+        deliveryPartyLoading: false 
+      });
+    } catch(e) {
+      this.setData({ deliveryPartyLoading: false });
+    }
+  },
+
+  selectDeliveryParty(e) {
+    const { id, title } = e.currentTarget.dataset;
+    this.setData({
+      'assignForm.deliveryPartyId': id,
+      'assignForm.deliveryParty': title
+    });
+  },
+
+  onAssignPriceChange(e) {
+    this.setData({ 'assignForm.deliveryPartyPurchasePrice': e.detail.value });
+  },
+
+  onAssignPaymentChange(e) {
+    const methods = ['全款', '账期', '背靠背'];
+    this.setData({ 'assignForm.paymentMethod': methods[e.detail.value] });
+  },
+
+  onAssignTemplateChange(e) {
+    const templates = ['标准合同', '简易合同', '第三方合同'];
+    this.setData({ 'assignForm.contractTemplate': templates[e.detail.value] });
+  },
+
+  async submitAssign() {
+    const { detail, assignForm, actionLoading } = this.data;
+    
+    if (!assignForm.deliveryParty) {
+      wx.showToast({ title: '请选择交付方', icon: 'none' });
+      return;
+    }
+    
+    if (actionLoading) return;
+    this.setData({ actionLoading: true });
+
+    try {
+      await salesOrderApi.assign(detail.id, {
+        deliveryParty: assignForm.deliveryParty,
+        deliveryPartyId: assignForm.deliveryPartyId,
+        deliveryPartyPurchasePrice: parseFloat(assignForm.deliveryPartyPurchasePrice) || 0,
+        paymentMethod: assignForm.paymentMethod,
+        contractTemplate: assignForm.contractTemplate,
+        status: '待确认订单'
+      });
+      
+      wx.showToast({ title: '指派成功', icon: 'success' });
+      this.closeModal();
+      this.loadDetail();
+    } catch (err) {
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+    } finally {
+      this.setData({ actionLoading: false });
+    }
+  },
+
+  // ========== 编辑订单 ==========
+  async submitEdit() {
+    const { detail, editForm, actionLoading } = this.data;
+    if (actionLoading) return;
+    this.setData({ actionLoading: true });
+
+    try {
+      await salesOrderApi.update(detail.id, editForm);
+      wx.showToast({ title: '保存成功', icon: 'success' });
+      this.closeModal();
+      this.loadDetail();
+    } catch (err) {
+      wx.showToast({ title: err.message || '保存失败', icon: 'none' });
+    } finally {
+      this.setData({ actionLoading: false });
+    }
+  },
+
+  // ========== 退回订单 ==========
+  async submitReturn() {
+    const { detail, actionLoading } = this.data;
+    if (actionLoading) return;
+    this.setData({ actionLoading: true });
+
+    try {
+      await salesOrderApi.returnOrder(detail.id, {
+        returnReason: '小程序退回'
+      });
+      wx.showToast({ title: '退回成功', icon: 'success' });
+      this.closeModal();
+      this.loadDetail();
+    } catch (err) {
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+    } finally {
+      this.setData({ actionLoading: false });
+    }
   },
 
   // ========== 发货 ==========

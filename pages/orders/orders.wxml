@@ -68,6 +68,14 @@
   <!-- 操作菜单（根据权限显示） -->
   <view class="action-sheet-mask" wx:if="{{actionSheetVisible}}" bindtap="hideActionSheet"></view>
   <view class="action-sheet {{actionSheetVisible ? 'show' : ''}}">
+    <view class="action-item" bindtap="handleAssign" wx:if="{{canAssign}}">
+      <text class="action-icon">📤</text>
+      <text>指派</text>
+    </view>
+    <view class="action-item" bindtap="handleEdit" wx:if="{{canEdit}}">
+      <text class="action-icon">✏️</text>
+      <text>编辑</text>
+    </view>
     <view class="action-item" bindtap="handleConfirm" wx:if="{{canConfirm}}">
       <text class="action-icon">✓</text>
       <text>确认订单</text>
@@ -91,6 +99,10 @@
     <view class="action-item" bindtap="handleContract">
       <text class="action-icon">📃</text>
       <text>查看合同</text>
+    </view>
+    <view class="action-item warn" bindtap="handleReturn" wx:if="{{canReturn}}">
+      <text class="action-icon">↩️</text>
+      <text>退回</text>
     </view>
     <view class="action-item cancel" bindtap="hideActionSheet">
       <text>取消</text>

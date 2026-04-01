@@ -196,5 +196,35 @@ Page({
     }
     this.hideActionSheet();
     wx.navigateTo({ url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=erp` });
+  },
+
+  // 指派订单
+  handleAssign() {
+    if (!this.data.canAssign) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
+    this.hideActionSheet();
+    wx.navigateTo({ url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=assign` });
+  },
+
+  // 编辑订单
+  handleEdit() {
+    if (!this.data.canEdit) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
+    this.hideActionSheet();
+    wx.navigateTo({ url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=edit` });
+  },
+
+  // 退回订单
+  handleReturn() {
+    if (!this.data.canReturn) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
+    this.hideActionSheet();
+    wx.navigateTo({ url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=return` });
   }
 });

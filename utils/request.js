@@ -43,6 +43,12 @@ export const salesOrderApi = {
   create: (data) => request('/api/sales-order-masters', { method: 'POST', data }),
   update: (id, data) => request(`/api/sales-order-masters/${id}`, { method: 'PUT', data }),
   delete: (id) => request(`/api/sales-order-masters/${id}`, { method: 'DELETE' }),
+  // 指派订单
+  assign: (id, data) => request(`/api/sales-order-masters/${id}/assign`, { method: 'POST', data }),
+  // 退回订单
+  returnOrder: (id, data) => request(`/api/sales-order-masters/${id}/return`, { method: 'POST', data }),
+  // 获取订单关联的子单（主链视角）
+  getChildren: (id) => request(`/api/sales-order-masters/${id}/children`, { method: 'GET' }),
 };
 
 // 商品 API

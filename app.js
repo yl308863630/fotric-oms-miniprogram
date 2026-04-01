@@ -58,11 +58,11 @@ App({
     // 检查角色
     const rolePermissions = {
       // 业务员
-      'SALES': ['create_order', 'view_order', 'view_product'],
+      'SALES': ['create_order', 'view_order', 'view_product', 'assign_order', 'edit_order'],
       // 被指派方
       'PARTNER': ['confirm_order', 'sign_contract', 'view_order'],
       // 商务
-      'BUSINESS': ['erp_entry', 'upload_receipt', 'view_order', 'view_contract'],
+      'BUSINESS': ['erp_entry', 'upload_receipt', 'view_order', 'view_contract', 'edit_order'],
       // 仓库
       'WAREHOUSE': ['ship', 'upload_receipt', 'view_order'],
       // 财务
