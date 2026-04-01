@@ -1,0 +1,36 @@
+<!-- 合作伙伴列表 -->
+<view class="partners-page">
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索公司名称" bindconfirm="onSearch" />
+  </view>
+  
+  <scroll-view class="partner-list" scroll-y>
+    <view class="partner-card" wx:for="{{partners}}" wx:key="id">
+      <view class="partner-header">
+        <text class="partner-title">{{item.title}}</text>
+        <text class="partner-type">{{item.type === 'A' ? '甲方' : '乙方'}}</text>
+      </view>
+      <view class="partner-info">
+        <view wx:if="{{item.code}}">
+          <text class="label">编码：</text>
+          <text class="value">{{item.code}}</text>
+        </view>
+        <view wx:if="{{item.contactPerson}}">
+          <text class="label">联系人：</text>
+          <text class="value">{{item.contactPerson}}</text>
+        </view>
+        <view wx:if="{{item.contactPhone}}">
+          <text class="label">电话：</text>
+          <text class="value">{{item.contactPhone}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="empty" wx:if="{{!partners.length && !loading}}">
+      <text>暂无合作伙伴</text>
+    </view>
+    
+    <view class="load-more" wx:if="{{loading}}">加载中...</view>
+    <view class="load-more" wx:if="{{!hasMore && partners.length}}">没有更多了</view>
+  </scroll-view>
+</view>

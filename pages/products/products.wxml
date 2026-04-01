@@ -1,0 +1,42 @@
+<!-- 商品列表 -->
+<view class="products-page">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input 
+      class="search-input" 
+      placeholder="搜索商品名称" 
+      bindconfirm="onSearch"
+    />
+  </view>
+  
+  <!-- 商品列表 -->
+  <scroll-view class="product-list" scroll-y>
+    <view class="product-card" wx:for="{{products}}" wx:key="id">
+      <view class="product-info">
+        <text class="product-name">{{item.name}}</text>
+        <text class="product-barcode">{{item.barcode}}</text>
+      </view>
+      <view class="product-price">
+        <view class="price-item">
+          <text class="label">面价</text>
+          <text class="value">¥{{item.listPrice || 0}}</text>
+        </view>
+        <view class="price-item">
+          <text class="label">经销商价</text>
+          <text class="value">¥{{item.dealerPrice || 0}}</text>
+        </view>
+      </view>
+      <view class="product-stock">
+        <text>库存: {{item.stock || 0}}</text>
+        <text wx:if="{{item.isDiscontinued}}" class="discontinued">已停产</text>
+      </view>
+    </view>
+    
+    <view class="empty" wx:if="{{!products.length && !loading}}">
+      <text>暂无商品</text>
+    </view>
+    
+    <view class="load-more" wx:if="{{loading}}">加载中...</view>
+    <view class="load-more" wx:if="{{!hasMore && products.length}}">没有更多了</view>
+  </scroll-view>
+</view>

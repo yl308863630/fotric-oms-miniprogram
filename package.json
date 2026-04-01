@@ -1,0 +1,15 @@
+{
+  "name": "oms-miniprogram",
+  "version": "1.0.0",
+  "description": "FOTRIC OMS 微信小程序",
+  "main": "app.js",
+  "scripts": {
+    "dev": "echo '请在微信开发者工具中打开项目'",
+    "build": "echo '请在微信开发者工具中打开项目'"
+  },
+  "keywords": ["wechat", "miniprogram", "oms"],
+  "author": "FOTRIC",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {}
+}

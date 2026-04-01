@@ -1,0 +1,13 @@
+/* 合作伙伴样式 */
+.partners-page { min-height: 100vh; background: #f5f5f5; }
+.search-bar { padding: 20rpx; background: #fff; }
+.search-input { height: 72rpx; background: #f5f5f5; border-radius: 36rpx; padding: 0 30rpx; font-size: 28rpx; }
+.partner-list { height: calc(100vh - 132rpx); padding: 20rpx; }
+.partner-card { background: #fff; border-radius: 16rpx; padding: 30rpx; margin-bottom: 20rpx; }
+.partner-header { display: flex; justify-content: space-between; margin-bottom: 20rpx; }
+.partner-title { font-size: 32rpx; font-weight: bold; }
+.partner-type { font-size: 24rpx; padding: 4rpx 16rpx; background: #e6f7ff; color: #1890ff; border-radius: 20rpx; }
+.partner-info view { display: flex; margin-bottom: 10rpx; font-size: 28rpx; }
+.partner-info .label { color: #999; width: 120rpx; }
+.partner-info .value { color: #333; }
+.empty, .load-more { text-align: center; padding: 60rpx; color: #999; }
