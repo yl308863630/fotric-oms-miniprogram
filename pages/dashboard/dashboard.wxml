@@ -11,7 +11,28 @@
     </view>
     <view class="logout" bindtap="handleLogout">退出</view>
   </view>
-  
+
+  <!-- 快捷入口 -->
+  <view class="quick-entry">
+    <view class="entry-item" bindtap="goToPendingAssign">
+      <view class="entry-icon pending">📤</view>
+      <text class="entry-label">待指派</text>
+      <view class="entry-badge" wx:if="{{stats.pendingAssignCount > 0}}">{{stats.pendingAssignCount}}</view>
+    </view>
+    <view class="entry-item" bindtap="goToContractTemplates">
+      <view class="entry-icon">📝</view>
+      <text class="entry-label">合同模板</text>
+    </view>
+    <view class="entry-item" bindtap="goToReconciliation">
+      <view class="entry-icon">💰</view>
+      <text class="entry-label">对账</text>
+    </view>
+    <view class="entry-item" bindtap="goToContracts">
+      <view class="entry-icon">📃</view>
+      <text class="entry-label">合同</text>
+    </view>
+  </view>
+
   <!-- 统计卡片 -->
   <view class="stats-grid">
     <view class="stat-card" bindtap="goToOrders">
@@ -31,22 +52,15 @@
       <text class="stat-label">合作方</text>
     </view>
   </view>
-  
+
   <!-- 最近订单 -->
   <view class="section">
     <view class="section-header">
       <text class="section-title">最近订单</text>
       <text class="more" bindtap="goToOrders">更多 ></text>
     </view>
-    
     <view class="order-list">
-      <view 
-        class="order-item" 
-        wx:for="{{recentOrders}}" 
-        wx:key="id"
-        data-id="{{item.id}}"
-        bindtap="goToOrderDetail"
-      >
+      <view class="order-item" wx:for="{{recentOrders}}" wx:key="id" data-id="{{item.id}}" bindtap="goToOrderDetail">
         <view class="order-info">
           <text class="order-no">{{item.orderNo}}</text>
           <text class="order-status {{item.status}}">{{item.statusText || item.status}}</text>
@@ -57,13 +71,12 @@
         </view>
         <view class="order-time">{{item.createTime}}</view>
       </view>
-      
       <view class="empty" wx:if="{{!recentOrders.length && !loading}}">
         <text>暂无订单</text>
       </view>
     </view>
   </view>
-  
+
   <!-- 加载中 -->
   <view class="loading" wx:if="{{loading}}">
     <text>加载中...</text>

@@ -93,4 +93,12 @@ export const authApi = {
   getUserInfo: () => request('/api/auth/me', { method: 'GET' }),
 };
 
+// 合同模板 API
+export const contractApi = {
+  templateList: (params) => request('/api/contract-templates', { method: 'GET', data: params }),
+  createTemplate: (data) => request('/api/contract-templates', { method: 'POST', data }),
+  updateTemplate: (id, data) => request(`/api/contract-templates/${id}`, { method: 'PUT', data }),
+  deleteTemplate: (id) => request(`/api/contract-templates/${id}`, { method: 'DELETE' }),
+};
+
 export default request;

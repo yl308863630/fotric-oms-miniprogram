@@ -6,6 +6,8 @@
     "pages/orders/detail",
     "pages/orders/create",
     "pages/reconciliation/create",
+    "pages/pending-assign/list",
+    "pages/contract-templates/list",
     "pages/products/products",
     "pages/products/detail",
     "pages/partners/partners",
@@ -36,6 +38,12 @@
         "text": "订单",
         "iconPath": "images/order.png",
         "selectedIconPath": "images/order-active.png"
+      },
+      {
+        "pagePath": "pages/pending-assign/list",
+        "text": "待指派",
+        "iconPath": "images/assign.png",
+        "selectedIconPath": "images/assign-active.png"
       },
       {
         "pagePath": "pages/products/products",
