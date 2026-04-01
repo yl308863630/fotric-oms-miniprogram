@@ -1,47 +1,298 @@
-<!-- 订单详情 -->
-<view class="detail-page" wx:if="{{detail}}">
-  <view class="section">
-    <view class="section-title">订单信息</view>
-    <view class="info-list">
-      <view class="info-item">
-        <text class="label">订单号</text>
-        <text class="value">{{detail.masterNo || detail.orderNo}}</text>
+<!-- 订单详情页 -->
+<view class="detail-page">
+  <scroll-view scroll-y class="detail-scroll" wx:if="{{detail}}">
+    <!-- 订单状态 -->
+    <view class="status-card">
+      <view class="status-header">
+        <text class="status-label">订单状态</text>
+        <text class="status-value {{detail.status}}">{{detail.status || '待指派'}}</text>
       </view>
-      <view class="info-item">
-        <text class="label">状态</text>
-        <text class="value status {{detail.masterStatus}}">{{detail.masterStatusText || detail.masterStatus}}</text>
-      </view>
-      <view class="info-item">
-        <text class="label">甲方</text>
-        <text class="value">{{detail.partyATitle || '-'}}</text>
-      </view>
-      <view class="info-item">
-        <text class="label">平台</text>
-        <text class="value">{{detail.platformName || '-'}}</text>
-      </view>
-      <view class="info-item">
-        <text class="label">订单金额</text>
-        <text class="value amount">¥{{detail.amount}}</text>
-      </view>
-      <view class="info-item">
-        <text class="label">创建时间</text>
-        <text class="value">{{detail.createTime}}</text>
+      <view class="status-info">
+        <text>订单号：{{detail.platformOrderNo || detail.omsOrderNo || detail.id}}</text>
       </view>
     </view>
-  </view>
-  
-  <view class="section" wx:if="{{detail.items && detail.items.length}}">
-    <view class="section-title">商品明细</view>
-    <view class="item-list">
-      <view class="item-row" wx:for="{{detail.items}}" wx:key="index">
-        <text class="item-name">{{item.productName}}</text>
-        <text class="item-qty">x{{item.quantity}}</text>
-        <text class="item-price">¥{{item.price}}</text>
-      </view>
-    </view>
-  </view>
-</view>
 
-<view class="loading" wx:if="{{loading}}">
-  <text>加载中...</text>
+    <!-- 甲方信息 -->
+    <view class="section">
+      <view class="section-title">甲方信息</view>
+      <view class="info-list">
+        <view class="info-item">
+          <text class="label">甲方名称</text>
+          <text class="value">{{detail.partyATitle || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">顶层客户</text>
+          <text class="value">{{detail.topLevelCustomerName || '-'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 平台信息 -->
+    <view class="section">
+      <view class="section-title">平台信息</view>
+      <view class="info-list">
+        <view class="info-item">
+          <text class="label">平台</text>
+          <text class="value">{{detail.platformName || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">平台订单号</text>
+          <text class="value">{{detail.platformOrderNo || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">支付方式</text>
+          <text class="value">{{detail.paymentMethod || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">订单类型</text>
+          <text class="value">{{detail.orderType || '-'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 收货信息 -->
+    <view class="section">
+      <view class="section-title">收货信息</view>
+      <view class="info-list">
+        <view class="info-item">
+          <text class="label">收货人</text>
+          <text class="value">{{detail.receiverName || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">联系电话</text>
+          <text class="value">{{detail.receiverPhone || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">收货地址</text>
+          <text class="value">{{detail.receiverAddress || '-'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 线下销售 -->
+    <view class="section" wx:if="{{detail.offlineSales === '是'}}">
+      <view class="section-title">线下销售</view>
+      <view class="info-list">
+        <view class="info-item">
+          <text class="label">线下合同号</text>
+          <text class="value">{{detail.offlineContractNo || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">线下出货价</text>
+          <text class="value">¥{{detail.offlineShippingPrice || 0}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">扣点</text>
+          <text class="value">{{detail.deductionRate || 0}}%</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 商品明细 -->
+    <view class="section">
+      <view class="section-title">商品明细</view>
+      <view class="item-list" wx:if="{{detail.items && detail.items.length}}">
+        <view class="item-row" wx:for="{{detail.items}}" wx:key="index">
+          <view class="item-info">
+            <text class="item-name">{{item.productName}}</text>
+            <text class="item-model" wx:if="{{item.model}}">{{item.model}}</text>
+          </view>
+          <view class="item-right">
+            <text class="item-qty">x{{item.quantity}}</text>
+            <text class="item-amount">¥{{item.amount || (item.price * item.quantity)}}</text>
+          </view>
+        </view>
+        <view class="total-row">
+          <text>合计</text>
+          <text class="total-amount">¥{{detail.amount || detail.taxIncludedTotal || 0}}</text>
+        </view>
+      </view>
+      <view class="empty" wx:else>暂无商品</view>
+    </view>
+
+    <!-- 物流信息 -->
+    <view class="section" wx:if="{{detail.shippingParty || detail.platformReconciliationNo}}">
+      <view class="section-title">物流信息</view>
+      <view class="info-list">
+        <view class="info-item">
+          <text class="label">物流公司</text>
+          <text class="value">{{detail.shippingParty || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">快递单号</text>
+          <text class="value">{{detail.platformReconciliationNo || '-'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 发票与结算 -->
+    <view class="section" wx:if="{{detail.invoiceNumber || detail.settlementNo}}">
+      <view class="section-title">发票与结算</view>
+      <view class="info-list">
+        <view class="info-item">
+          <text class="label">发票号码</text>
+          <text class="value">{{detail.invoiceNumber || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">甲方对账单号</text>
+          <text class="value">{{detail.partyReconciliationNo || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">结算单号</text>
+          <text class="value">{{detail.settlementNo || '-'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 商务ERP录单 -->
+    <view class="section">
+      <view class="section-title">商务ERP录单</view>
+      <view class="info-list" wx:if="{{detail.erpEntryStatus}}">
+        <view class="info-item">
+          <text class="label">录单状态</text>
+          <text class="value">{{detail.erpEntryStatus}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">录单人</text>
+          <text class="value">{{detail.erpEntryOperator || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">录单时间</text>
+          <text class="value">{{detail.erpEntryTime || '-'}}</text>
+        </view>
+      </view>
+      <view class="empty" wx:else>未录单</view>
+    </view>
+
+    <!-- 创建信息 -->
+    <view class="section">
+      <view class="section-title">创建信息</view>
+      <view class="info-list">
+        <view class="info-item">
+          <text class="label">创建时间</text>
+          <text class="value">{{detail.createTime || '-'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">备注</text>
+          <text class="value">{{detail.remark || '-'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部占位 -->
+    <view class="bottom-space"></view>
+  </scroll-view>
+
+  <!-- 加载中 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar" wx:if="{{detail}}">
+    <view class="action-btn-list">
+      <view class="action-btn" bindtap="openActionModal" data-type="confirm" wx:if="{{detail.status === '待确认订单'}}">
+        <text>确认</text>
+      </view>
+      <view class="action-btn" bindtap="openActionModal" data-type="ship" wx:if="{{detail.status === '待合同盖章'}}">
+        <text>发货</text>
+      </view>
+      <view class="action-btn" bindtap="openActionModal" data-type="receipt" wx:if="{{detail.status === '已发货'}}">
+        <text>签收单</text>
+      </view>
+      <view class="action-btn primary" bindtap="openActionModal" data-type="settle" wx:if="{{detail.status === '已对账未开票' || detail.status === '已开票待结算'}}">
+        <text>结算</text>
+      </view>
+      <view class="action-btn" bindtap="openActionModal" data-type="erp">
+        <text>ERP录单</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作弹窗 -->
+  <view class="modal-mask" wx:if="{{showActionModal}}" bindtap="closeModal"></view>
+  <view class="modal {{showActionModal ? 'show' : ''}}">
+    <view class="modal-header">
+      <text class="modal-title">
+        {{actionType === 'confirm' ? '确认订单' : 
+          actionType === 'ship' ? '发货' : 
+          actionType === 'receipt' ? '上传签收单' : 
+          actionType === 'settle' ? '结算' : 
+          actionType === 'erp' ? '商务ERP录单' : '操作'}}
+      </text>
+      <text class="modal-close" bindtap="closeModal">×</text>
+    </view>
+
+    <view class="modal-content">
+      <!-- 确认订单 -->
+      <view wx:if="{{actionType === 'confirm'}}">
+        <view class="confirm-tip">确认后将进入"待合同盖章"状态</view>
+        <button class="modal-btn" bindtap="submitConfirm" loading="{{actionLoading}}">确认</button>
+      </view>
+
+      <!-- 发货 -->
+      <view wx:if="{{actionType === 'ship'}}">
+        <view class="form-item">
+          <text class="label">物流公司</text>
+          <input class="input" placeholder="请输入物流公司" value="{{shipForm.logisticsCompany}}" bindinput="onLogisticsChange" />
+        </view>
+        <view class="form-item">
+          <text class="label">快递单号</text>
+          <input class="input" placeholder="请输入快递单号" value="{{shipForm.trackingNumber}}" bindinput="onTrackingNoChange" />
+        </view>
+        <button class="modal-btn" bindtap="submitShip" loading="{{actionLoading}}">确认发货</button>
+      </view>
+
+      <!-- 上传签收单 -->
+      <view wx:if="{{actionType === 'receipt'}}">
+        <view class="upload-box" bindtap="uploadReceipt">
+          <view wx:if="{{!receiptFile}}">
+            <text class="upload-icon">+</text>
+            <text>点击上传签收单</text>
+          </view>
+          <view wx:else>
+            <text>{{receiptFile.name}}</text>
+          </view>
+        </view>
+        <button class="modal-btn" bindtap="submitReceipt" loading="{{actionLoading}}">上传</button>
+      </view>
+
+      <!-- 结算 -->
+      <view wx:if="{{actionType === 'settle'}}">
+        <view class="form-item">
+          <text class="label">发票号码 <text class="required">*</text></text>
+          <input class="input" placeholder="请输入发票号码" value="{{settleForm.invoiceNumber}}" bindinput="onInvoiceNumberChange" />
+        </view>
+        <view class="form-item">
+          <text class="label">甲方对账单号</text>
+          <input class="input" placeholder="请输入对账单号" value="{{settleForm.partyReconciliationNo}}" bindinput="onPartyReconciliationNoChange" />
+        </view>
+        <view class="form-item">
+          <text class="label">结算单号</text>
+          <input class="input" placeholder="请输入结算单号" value="{{settleForm.settlementNo}}" bindinput="onSettlementNoChange" />
+        </view>
+        <button class="modal-btn" bindtap="submitSettle" loading="{{actionLoading}}">保存结算</button>
+      </view>
+
+      <!-- 商务ERP录单 -->
+      <view wx:if="{{actionType === 'erp'}}">
+        <view class="form-item">
+          <text class="label">录单状态</text>
+          <picker mode="selector" range="{{['未录单', '已录单', '录单中']}}" bindchange="onErpStatusChange">
+            <view class="picker-value">{{erpForm.erpEntryStatus || '请选择'}}</view>
+          </picker>
+        </view>
+        <view class="upload-box" bindtap="uploadErpScreenshot">
+          <view wx:if="{{!erpFile}}">
+            <text class="upload-icon">+</text>
+            <text>上传录单截图</text>
+          </view>
+          <view wx:else>
+            <text>{{erpFile.name}}</text>
+          </view>
+        </view>
+        <button class="modal-btn" bindtap="submitErp" loading="{{actionLoading}}">保存</button>
+      </view>
+    </view>
+  </view>
 </view>

@@ -1,28 +1,39 @@
 <!-- 订单列表 -->
 <view class="orders-page">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索订单号/甲方名称" bindconfirm="onSearch" />
+  </view>
+
   <!-- 顶部操作栏 -->
   <view class="top-bar">
     <scroll-view class="status-tabs" scroll-x>
-      <view class="tab {{statusFilter === '' ? 'active' : ''}}" data-status="" bindtap="onStatusChange" >全部</view>
-      <view class="tab {{statusFilter === 'PENDING' ? 'active' : ''}}" data-status="PENDING" bindtap="onStatusChange" >待处理</view>
-      <view class="tab {{statusFilter === 'CONFIRMED' ? 'active' : ''}}" data-status="CONFIRMED" bindtap="onStatusChange" >已确认</view>
-      <view class="tab {{statusFilter === 'SHIPPED' ? 'active' : ''}}" data-status="SHIPPED" bindtap="onStatusChange" >已发货</view>
-      <view class="tab {{statusFilter === 'COMPLETED' ? 'active' : ''}}" data-status="COMPLETED" bindtap="onStatusChange" >已完成</view>
+      <view 
+        class="tab {{statusFilter === item.value ? 'active' : ''}}" 
+        wx:for="{{statusOptions}}" 
+        wx:key="value"
+        data-status="{{item.value}}" 
+        bindtap="onStatusChange"
+      >{{item.label}}</view>
     </scroll-view>
     <view class="add-btn" bindtap="goToCreate">+ 新建</view>
   </view>
   
   <!-- 订单列表 -->
   <scroll-view class="order-list" scroll-y>
-    <view class="order-card" wx:for="{{orders}}" wx:key="id" data-id="{{item.id}}" bindtap="goToDetail" >
+    <view class="order-card" wx:for="{{orders}}" wx:key="id">
       <view class="card-header">
-        <text class="order-no">{{item.masterNo || item.orderNo}}</text>
-        <text class="status-badge {{item.masterStatus || item.status}}">{{item.masterStatusText || item.masterStatus || item.status}}</text>
+        <text class="order-no">{{item.platformOrderNo || item.omsOrderNo || item.id}}</text>
+        <view class="header-right">
+          <text class="status-badge {{item.masterStatus || item.status}}">{{item.masterStatusText || item.status || '待指派'}}</text>
+          <text class="action-btn" catchtap="showActionSheet" data-item="{{item}}">⋮</text>
+        </view>
       </view>
-      <view class="card-body">
+      
+      <view class="card-body" bindtap="goToDetail" data-id="{{item.id}}">
         <view class="info-row">
           <text class="label">甲方：</text>
-          <text class="value">{{item.partyATitle || '未知'}}</text>
+          <text class="value">{{item.partyATitle || '-'}}</text>
         </view>
         <view class="info-row">
           <text class="label">平台：</text>
@@ -30,18 +41,23 @@
         </view>
         <view class="info-row">
           <text class="label">金额：</text>
-          <text class="value amount">¥{{item.amount || item.totalAmount || 0}}</text>
+          <text class="value amount">¥{{item.amount || item.taxIncludedTotal || 0}}</text>
         </view>
       </view>
+      
       <view class="card-footer">
         <text class="time">{{item.createTime}}</text>
-        <text class="more">查看详情 ></text>
+        <view class="tags" wx:if="{{item.offlineSales === '是'}}">
+          <text class="tag offline">线下</text>
+        </view>
       </view>
     </view>
+    
     <!-- 空状态 -->
     <view class="empty" wx:if="{{!orders.length && !loading}}">
       <text>暂无订单</text>
     </view>
+    
     <!-- 加载更多 -->
     <view class="load-more" wx:if="{{loading}}">
       <text>加载中...</text>
@@ -50,4 +66,32 @@
       <text>没有更多了</text>
     </view>
   </scroll-view>
+
+  <!-- 操作菜单 -->
+  <view class="action-sheet-mask" wx:if="{{actionSheetVisible}}" bindtap="hideActionSheet"></view>
+  <view class="action-sheet {{actionSheetVisible ? 'show' : ''}}">
+    <view class="action-item" bindtap="handleConfirm">
+      <text class="action-icon">✓</text>
+      <text>确认订单</text>
+    </view>
+    <view class="action-item" bindtap="handleShip">
+      <text class="action-icon">🚚</text>
+      <text>发货</text>
+    </view>
+    <view class="action-item" bindtap="handleReceipt">
+      <text class="action-icon">📄</text>
+      <text>上传签收单</text>
+    </view>
+    <view class="action-item" bindtap="handleSettle">
+      <text class="action-icon">💰</text>
+      <text>结算</text>
+    </view>
+    <view class="action-item" bindtap="handleContract">
+      <text class="action-icon">📃</text>
+      <text>查看合同</text>
+    </view>
+    <view class="action-item cancel" bindtap="hideActionSheet">
+      <text>取消</text>
+    </view>
+  </view>
 </view>
