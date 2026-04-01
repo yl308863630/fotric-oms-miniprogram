@@ -1,0 +1,92 @@
+<!-- 结算/对账页面 -->
+<view class="settlements-page">
+  <!-- Tab切换 -->
+  <view class="tabs">
+    <view 
+      class="tab {{activeTab === item.key ? 'active' : ''}}" 
+      wx:for="{{tabs}}" 
+      wx:key="key"
+      data-tab="{{item.key}}"
+      bindtap="switchTab"
+    >{{item.label}}</view>
+  </view>
+
+  <!-- 销售对账列表 -->
+  <scroll-view class="list" scroll-y wx:if="{{activeTab === 'reconciliation'}}">
+    <view 
+      class="card" 
+      wx:for="{{reconciliationList}}" 
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="goToReconciliationDetail"
+    >
+      <view class="card-header">
+        <text class="no">{{item.reconciliationNo || '对账单号'}}</text>
+        <text class="status {{item.status}}">{{item.statusText || item.status}}</text>
+      </view>
+      <view class="card-body">
+        <view class="row">
+          <text class="label">甲方：</text>
+          <text class="value">{{item.partyATitle || '-'}}</text>
+        </view>
+        <view class="row">
+          <text class="label">对账金额：</text>
+          <text class="value amount">¥{{item.amount || item.reconciliationAmount || 0}}</text>
+        </view>
+        <view class="row">
+          <text class="label">对账时间：</text>
+          <text class="value">{{item.reconciliationDate || item.createTime || '-'}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{!reconciliationList.length && !loading}}">暂无对账单</view>
+    <view class="load-more" wx:if="{{loading}}">加载中...</view>
+    <view class="load-more" wx:if="{{!hasMore && reconciliationList.length}}">没有更多了</view>
+  </scroll-view>
+
+  <!-- 销售结算列表 -->
+  <scroll-view class="list" scroll-y wx:if="{{activeTab === 'settlement'}}">
+    <view class="card" wx:for="{{settlementList}}" wx:key="id">
+      <view class="card-header">
+        <text class="no">{{item.settlementNo || '结算单号'}}</text>
+        <text class="status {{item.status}}">{{item.statusText || item.status}}</text>
+      </view>
+      <view class="card-body">
+        <view class="row">
+          <text class="label">结算金额：</text>
+          <text class="value amount">¥{{item.amount || item.settlementAmount || 0}}</text>
+        </view>
+        <view class="row">
+          <text class="label">结算时间：</text>
+          <text class="value">{{item.settlementDate || item.createTime || '-'}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{!settlementList.length && !loading}}">暂无结算单</view>
+    <view class="load-more" wx:if="{{loading}}">加载中...</view>
+    <view class="load-more" wx:if="{{!hasMore && settlementList.length}}">没有更多了</view>
+  </scroll-view>
+
+  <!-- 销项发票列表 -->
+  <scroll-view class="list" scroll-y wx:if="{{activeTab === 'invoice'}}">
+    <view class="card" wx:for="{{invoiceList}}" wx:key="id">
+      <view class="card-header">
+        <text class="no">{{item.invoiceNo || item.code}}</text>
+        <text class="status {{item.status}}">{{item.statusText || item.status}}</text>
+      </view>
+      <view class="card-body">
+        <view class="row">
+          <text class="label">发票金额：</text>
+          <text class="value amount">¥{{item.amount || item.totalAmount || 0}}</text>
+        </view>
+        <view class="row">
+          <text class="label">开票日期：</text>
+          <text class="value">{{item.invoiceDate || item.createTime || '-'}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{!invoiceList.length && !loading}}">暂无发票</view>
+    <view class="load-more" wx:if="{{loading}}">加载中...</view>
+    <view class="load-more" wx:if="{{!hasMore && invoiceList.length}}">没有更多了</view>
+  </scroll-view>
+</view>

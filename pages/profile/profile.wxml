@@ -1,0 +1,49 @@
+<!-- 个人中心页面 -->
+<view class="profile-page">
+  <!-- 头部用户信息 -->
+  <view class="header">
+    <view class="user-card">
+      <image class="avatar" src="/images/avatar.png" mode="aspectFill"></image>
+      <view class="info">
+        <text class="name">{{userInfo.realName || userInfo.username || '未登录'}}</text>
+        <text class="role">{{userInfo.role || '员工'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快捷入口 -->
+  <view class="quick-actions">
+    <view class="action-item" bindtap="goToOrders">
+      <text class="num">0</text>
+      <text class="label">待处理</text>
+    </view>
+    <view class="action-item" bindtap="goToOrders">
+      <text class="num">0</text>
+      <text class="label">进行中</text>
+    </view>
+    <view class="action-item" bindtap="goToOrders">
+      <text class="num">0</text>
+      <text class="label">已完成</text>
+    </view>
+  </view>
+
+  <!-- 菜单列表 -->
+  <view class="menu-list">
+    <view 
+      class="menu-item" 
+      wx:for="{{menuItems}}" 
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="onMenuTap"
+    >
+      <view class="menu-left">
+        <text class="icon {{item.icon}}"></text>
+        <text class="title">{{item.title}}</text>
+      </view>
+      <text class="arrow">></text>
+    </view>
+  </view>
+
+  <!-- 退出按钮 -->
+  <view class="logout-btn" bindtap="handleLogout">退出登录</view>
+</view>
