@@ -1,5 +1,5 @@
 <template>
-  <div class="opportunity-container">
+  <div class="opportunity-container mobile-list-layout">
     <el-card class="box-card">
       <template #header>
         <div class="card-header">
@@ -18,11 +18,12 @@
         />
         <el-select
           v-model="salesFilter"
-          placeholder="筛选业务员"
+          placeholder="全部"
           style="width: 200px; margin-right: 10px;"
           clearable
           filterable
         >
+          <el-option label="全部" value="" />
           <el-option
             v-for="user in users"
             :key="user.id"
@@ -78,13 +79,24 @@
           </div>
         </el-popover>
       </div>
+      <el-alert
+        v-if="opportunityDashboardHint"
+        class="dashboard-entry-hint"
+        title="Dashboard 入口提示"
+        :description="opportunityDashboardHint"
+        type="info"
+        :closable="false"
+        show-icon
+      />
 
       <!-- 表格 -->
+      <div class="table-wrapper">
       <el-table :data="filteredData" border style="width: 100%" v-loading="loading">
-        <el-table-column label="操作" width="150" fixed="left">
+        <el-table-column label="操作" width="220" fixed="left">
           <template #default="scope">
             <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
             <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+            <el-button size="small" type="primary" link @click="openGenerateQuotation(scope.row)">生成报价单</el-button>
           </template>
         </el-table-column>
         <el-table-column v-if="orderedColumns.find(col => col.label === 'customerCode' && col.visible)" prop="customerCode" label="客户编码" width="150" fixed />
@@ -110,12 +122,29 @@
             <template #default="scope" v-else-if="column.label === 'expectedDate'">
               {{ formatDateTime(scope.row[column.label], false) }}
             </template>
+            <template #default="scope" v-else-if="column.label === 'contact'">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span>{{ maskName(scope.row.contact) }}</span>
+                <el-button link type="primary" size="small" @click="copyOpportunityField(scope.row, 'contact', scope.row.contact)" title="复制">
+                  <el-icon><CopyDocument /></el-icon>
+                </el-button>
+              </div>
+            </template>
+            <template #default="scope" v-else-if="column.label === 'phone'">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span>{{ maskPhone(scope.row.phone) }}</span>
+                <el-button link type="primary" size="small" @click="copyOpportunityField(scope.row, 'phone', scope.row.phone)" title="复制">
+                  <el-icon><CopyDocument /></el-icon>
+                </el-button>
+              </div>
+            </template>
             <template #default="scope" v-else>
               {{ scope.row[column.label] }}
             </template>
           </el-table-column>
         </template>
       </el-table>
+      </div>
 
       <div class="pagination-container">
         <el-pagination
@@ -207,15 +236,24 @@
               <el-table :data="opportunityProducts" border style="width: 100%; margin-top: 10px">
                 <el-table-column type="selection" width="55" />
                 <el-table-column prop="productName" label="产品" min-width="120" />
-                <el-table-column prop="productCategory" label="产品分类" min-width="100" />
-                <el-table-column prop="productCode" label="产品编号" min-width="100" />
                 <el-table-column prop="unit" label="销售单位" min-width="80" />
                 <el-table-column prop="standardPrice" label="标准单价" min-width="100" :formatter="formatCurrency" />
-                <el-table-column prop="productModel" label="产品属性" min-width="100" />
+                <el-table-column prop="productModel" label="产品型号" min-width="120" />
+                <el-table-column prop="productConfig" label="产品配置" min-width="130" />
                 <el-table-column prop="sellingPrice" label="售价" min-width="100" :formatter="formatCurrency" />
                 <el-table-column prop="quantity" label="数量" min-width="80" />
                 <el-table-column prop="discount" label="折扣" min-width="80" :formatter="formatDiscount" />
                 <el-table-column prop="totalPrice" label="总价" min-width="100" :formatter="formatCurrency" />
+                <el-table-column label="交期" min-width="130">
+                  <template #default="scope">
+                    <el-input v-model="scope.row.deliveryPeriod" placeholder="如：4-6周" />
+                  </template>
+                </el-table-column>
+                <el-table-column label="产品保修期" min-width="130">
+                  <template #default="scope">
+                    <el-input v-model="scope.row.warrantyPeriod" placeholder="如：1年" />
+                  </template>
+                </el-table-column>
                 <el-table-column prop="remarks" label="备注" min-width="100" />
                 <el-table-column label="操作" width="80" fixed="right">
                   <template #default="scope">
@@ -229,8 +267,8 @@
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="电商平台" prop="platform">
-              <el-input v-model="form.platform" placeholder="请输入电商平台" />
+            <el-form-item label="电商渠道" prop="platform">
+              <el-input v-model="form.platform" placeholder="请输入电商渠道" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -262,6 +300,29 @@
           <el-col :span="12">
             <el-form-item label="采购预算" prop="budget">
               <el-input v-model="form.budget" placeholder="请输入预算" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="付款条件" prop="deliveryPeriod">
+              <el-select
+                v-model="form.deliveryPeriod"
+                placeholder="请选择或输入付款条件（用于报价单）"
+                style="width: 100%"
+                filterable
+                allow-create
+                default-first-option
+                @blur="onPaymentTermsBlur"
+              >
+                <el-option
+                  v-for="t in paymentTermsOptions"
+                  :key="t"
+                  :label="t"
+                  :value="t"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -391,6 +452,12 @@
         <el-form-item label="备注" prop="remarks">
           <el-input v-model="addProductForm.remarks" type="textarea" :rows="2" />
         </el-form-item>
+        <el-form-item label="交期" prop="deliveryPeriod">
+          <el-input v-model="addProductForm.deliveryPeriod" placeholder="如：4-6周" />
+        </el-form-item>
+        <el-form-item label="产品保修期" prop="warrantyPeriod">
+          <el-input v-model="addProductForm.warrantyPeriod" placeholder="如：1年" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -424,14 +491,48 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 生成报价单弹窗 -->
+    <el-dialog
+      v-model="generateQuotationDialogVisible"
+      title="生成报价单"
+      width="480px"
+      @open="onGenerateQuotationDialogOpen"
+    >
+      <el-form label-width="100px">
+        <el-form-item label="选择模板" required>
+          <el-select
+            v-model="selectedQuotationTemplateId"
+            placeholder="请选择报价单模板"
+            style="width: 100%"
+            filterable
+          >
+            <el-option
+              v-for="t in quotationTemplates"
+              :key="t.id"
+              :label="t.templateName"
+              :value="t.id"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="generateQuotationDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="generateQuotationLoading" @click="confirmGenerateQuotation">生成并下载</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { CopyDocument } from '@element-plus/icons-vue'
 import request from '../../utils/request'
+import { apiBase } from '../../utils/apiBase'
 import draggable from 'vuedraggable'
+import { maskName, maskPhone, copyWithPrivacyLog } from '../../utils/privacy'
 
 interface ColumnConfig {
   label: string
@@ -443,7 +544,27 @@ interface ColumnConfig {
 }
 
 const loading = ref(false)
+const route = useRoute()
 const tableData = ref<any[]>([])
+const routeOpportunityStage = computed(() => {
+  const value = String(route.query.stage || '').trim()
+  return value || ''
+})
+const routeOpportunityCategory = computed(() => {
+  const value = String(route.query.category || '').trim()
+  return value || ''
+})
+const opportunityDashboardHint = computed(() => {
+  const entry = String(route.query.dashboardCard || '').trim()
+  if (entry === 'pendingAfterSales') {
+    return '当前从 Dashboard 的“待处理售后”进入，已按“业务阶段=售后维护”筛选。该卡片本身仍是占位口径，建议以列表结果为准。'
+  }
+  if (entry === 'pendingFiling') {
+    return '当前从 Dashboard 的“待处理报备”进入，已按“商机分类=报备”筛选。该卡片本身仍是占位口径，建议以列表结果为准。'
+  }
+  return ''
+})
+
 const searchQuery = ref('')
 const salesFilter = ref('')
 const currentPage = ref(1)
@@ -460,6 +581,13 @@ const showBatchAddProductDialog = ref(false)
 const addProductFormRef = ref()
 const batchProductTable = ref()
 const batchSelectProducts = ref<any[]>([])
+const generateQuotationDialogVisible = ref(false)
+const selectedOpportunityForQuotation = ref<any>(null)
+const quotationTemplates = ref<any[]>([])
+const selectedQuotationTemplateId = ref<number | null>(null)
+const generateQuotationLoading = ref(false)
+const paymentTermsOptions = ref<string[]>([])
+const PAYMENT_TERMS_MEMORY_KEY = 'opportunity_payment_terms_memory'
 
 // 定义所有列配置
 const allColumns = ref<ColumnConfig[]>([
@@ -467,7 +595,7 @@ const allColumns = ref<ColumnConfig[]>([
   { label: 'title', title: '商机标题', width: 180, visible: true },
   { label: 'customerName', title: '客户名称', width: 150, visible: true },
   { label: 'ecommerceSales', title: '电商业务员', width: 120, visible: true },
-  { label: 'productModel', title: '商品型号', width: 150, visible: true },
+  { label: 'productModel', title: '商品型号(多款)', width: 220, visible: true },
   { label: 'quantity', title: '数量', width: 80, visible: true },
   { label: 'estimatedAmount', title: '预计金额', width: 130, visible: true },
   { label: 'stage', title: '业务阶段', width: 120, visible: true },
@@ -476,7 +604,8 @@ const allColumns = ref<ColumnConfig[]>([
   { label: 'latestFollowUpRecord', title: '最新跟进记录', width: 200, visible: true },
   { label: 'followUpTime', title: '跟进时间', width: 160, visible: true },
   { label: 'createTime', title: '创建时间', width: 160, visible: true },
-  { label: 'expectedDate', title: '预计签单日期', width: 160, visible: true }
+  { label: 'expectedDate', title: '预计签单日期', width: 160, visible: true },
+  { label: 'deliveryPeriod', title: '付款条件', width: 140, visible: false }
 ])
 
 // 有序的列配置
@@ -590,6 +719,7 @@ const form = reactive({
   problemSolved: '',
   budget: '',
   competitor: '',
+  deliveryPeriod: '',
   ecommerceSales: '',
   offlineSales: '',
   stage: 'negotiating',
@@ -602,7 +732,9 @@ const addProductForm = reactive({
   quantity: 1,
   sellingPrice: 0,
   discount: 100,
-  remarks: ''
+  remarks: '',
+  deliveryPeriod: '',
+  warrantyPeriod: ''
 })
 
 const rules = {
@@ -614,6 +746,45 @@ const addProductRules = {
   productId: [{ required: true, message: '请选择产品', trigger: 'change' }],
   quantity: [{ required: true, message: '请输入数量', trigger: 'blur' }],
   sellingPrice: [{ required: true, message: '请输入售价', trigger: 'blur' }]
+}
+
+const loadPaymentTermsMemory = () => {
+  const raw = localStorage.getItem(PAYMENT_TERMS_MEMORY_KEY)
+  if (!raw) {
+    paymentTermsOptions.value = ['票到60天']
+    return
+  }
+  try {
+    const list = JSON.parse(raw)
+    if (Array.isArray(list)) {
+      paymentTermsOptions.value = list
+        .map(v => String(v).trim())
+        .filter(Boolean)
+        .slice(0, 20)
+      if (!paymentTermsOptions.value.includes('票到60天')) {
+        paymentTermsOptions.value.unshift('票到60天')
+      }
+      return
+    }
+  } catch {
+    // ignore
+  }
+  paymentTermsOptions.value = ['票到60天']
+}
+
+const rememberPaymentTerm = (term: string) => {
+  const value = (term || '').trim()
+  if (!value) return
+  const merged = [value, ...paymentTermsOptions.value.filter(t => t !== value)].slice(0, 20)
+  paymentTermsOptions.value = merged
+  localStorage.setItem(PAYMENT_TERMS_MEMORY_KEY, JSON.stringify(merged))
+}
+
+const onPaymentTermsBlur = (e: FocusEvent) => {
+  const text = ((e.target as HTMLInputElement | null)?.value || '').trim()
+  if (!text) return
+  form.deliveryPeriod = text
+  rememberPaymentTerm(text)
 }
 
 const filteredData = computed(() => {
@@ -636,6 +807,14 @@ const filteredData = computed(() => {
   if (salesFilter.value) {
     result = result.filter(item => item.ecommerceSales === salesFilter.value)
   }
+
+  if (routeOpportunityStage.value) {
+    result = result.filter(item => String(item.stage || '').trim() === routeOpportunityStage.value)
+  }
+
+  if (routeOpportunityCategory.value) {
+    result = result.filter(item => String(item.category || '').trim() === routeOpportunityCategory.value)
+  }
   
   return result
 })
@@ -643,7 +822,7 @@ const filteredData = computed(() => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await request.get('/opportunities', {
+    const res: any = await request.get('/opportunities', {
       params: {
         page: currentPage.value - 1,
         size: pageSize.value
@@ -661,7 +840,7 @@ const fetchData = async () => {
 
 const fetchProducts = async () => {
   try {
-    const res = await request.get('/products', {
+    const res: any = await request.get('/products', {
       params: {
         page: 0,
         size: 1000 // 一次性获取足够多的商品
@@ -675,16 +854,24 @@ const fetchProducts = async () => {
   }
 }
 
+const mergeUsersById = (primary: any[], extra: any[]) => {
+  const map = new Map<string, any>()
+  for (const u of [...primary, ...extra]) {
+    if (u == null || u.id == null) continue
+    map.set(String(u.id), u)
+  }
+  return Array.from(map.values())
+}
+
 const fetchUsers = async () => {
   try {
-    const res: any = await request.get('/users', {
-      params: {
-        role: 'ROLE_ECOMMERCE',
-        page: 0,
-        size: 1000
-      }
-    })
-    const content = res?.content || (Array.isArray(res) ? res : [])
+    const params = { page: 0, size: 1000 }
+    const norm = (r: any) => r?.content || (Array.isArray(r) ? r : [])
+    const [resEcom, resXiaoan] = await Promise.all([
+      request.get('/users', { params: { ...params, role: 'ROLE_ECOMMERCE' } }),
+      request.get('/users', { params: { ...params, role: 'ROLE_XIAOAN' } }).catch(() => ({ content: [] }))
+    ])
+    const content = mergeUsersById(norm(resEcom), norm(resXiaoan))
     users.value = content.filter((user: any) => user.enabled !== false)
     console.log('获取到的用户数据:', users.value)
   } catch (error) {
@@ -694,7 +881,7 @@ const fetchUsers = async () => {
 
 const fetchOpportunityProducts = async (opportunityId: number) => {
   try {
-    const res = await request.get(`/opportunities/${opportunityId}/products`)
+    const res: any = await request.get(`/opportunities/${opportunityId}/products`)
     opportunityProducts.value = res || []
   } catch (error) {
     console.error('Fetch opportunity products error:', error)
@@ -706,6 +893,68 @@ const handleAdd = () => {
   dialogTitle.value = '新增商机'
   resetForm()
   dialogVisible.value = true
+}
+
+const copyOpportunityField = async (row: any, _field: string, text: string) => {
+  const value = text != null ? String(text).trim() : ''
+  if (!value) {
+    ElMessage.warning('无内容可复制')
+    return
+  }
+  await copyWithPrivacyLog(value, {
+    targetType: 'OPPORTUNITY',
+    targetId: String(row.id ?? ''),
+    action: 'COPY',
+    field: value
+  })
+}
+
+const openGenerateQuotation = (row: any) => {
+  selectedOpportunityForQuotation.value = row
+  selectedQuotationTemplateId.value = null
+  generateQuotationDialogVisible.value = true
+}
+
+const onGenerateQuotationDialogOpen = async () => {
+  try {
+    const res: any = await request.get('/quotation-templates', { params: { page: 0, size: 500 } })
+    quotationTemplates.value = res.content || []
+  } catch (e) {
+    console.error('Fetch quotation templates error:', e)
+    ElMessage.error('获取报价单模板列表失败')
+    quotationTemplates.value = []
+  }
+}
+
+const confirmGenerateQuotation = async () => {
+  const opp = selectedOpportunityForQuotation.value
+  const templateId = selectedQuotationTemplateId.value
+  if (!opp?.id) {
+    ElMessage.warning('请选择商机')
+    return
+  }
+  if (templateId == null) {
+    ElMessage.warning('请选择报价单模板')
+    return
+  }
+  generateQuotationLoading.value = true
+  try {
+    const res: any = await request.post(`/opportunities/${opp.id}/generate-quotation`, { templateId })
+    const url = res?.url
+    if (url) {
+      const fullUrl = url.startsWith('http') ? url : apiBase() + url
+      window.open(fullUrl, '_blank')
+      ElMessage.success('报价单已生成，新窗口打开')
+    } else {
+      ElMessage.error(res?.error || '生成失败')
+    }
+  } catch (e: any) {
+    const msg = e?.response?.data?.error || e?.message || '生成报价单失败'
+    ElMessage.error(msg)
+  } finally {
+    generateQuotationLoading.value = false
+  }
+  generateQuotationDialogVisible.value = false
 }
 
 const handleEdit = async (row: any) => {
@@ -749,6 +998,8 @@ const handleAddProductChange = (productId: number) => {
   const product = products.value.find(p => p.id === productId)
   if (product) {
     addProductForm.sellingPrice = product.price || 0
+    addProductForm.deliveryPeriod = product.deliveryPeriod || ''
+    addProductForm.warrantyPeriod = product.warrantyPeriod || ''
   }
 }
 
@@ -762,6 +1013,7 @@ const addProduct = async () => {
           productId: product.id,
           productName: product.name,
           productModel: product.model,
+          productConfig: product.productConfig || product.specs || '',
           productCategory: product.category,
           productCode: product.code,
           unit: product.unit,
@@ -770,7 +1022,9 @@ const addProduct = async () => {
           quantity: addProductForm.quantity,
           discount: addProductForm.discount,
           totalPrice: addProductForm.sellingPrice * addProductForm.quantity * (addProductForm.discount / 100),
-          remarks: addProductForm.remarks
+          remarks: addProductForm.remarks,
+          deliveryPeriod: addProductForm.deliveryPeriod,
+          warrantyPeriod: addProductForm.warrantyPeriod
         }
         opportunityProducts.value.push(newProduct)
         showAddProductDialog.value = false
@@ -780,7 +1034,9 @@ const addProduct = async () => {
           quantity: 1,
           sellingPrice: 0,
           discount: 100,
-          remarks: ''
+          remarks: '',
+          deliveryPeriod: '',
+          warrantyPeriod: ''
         })
       }
     }
@@ -801,6 +1057,7 @@ const batchAddProducts = () => {
       productId: product.id,
       productName: product.name,
       productModel: product.model,
+      productConfig: product.productConfig || product.specs || '',
       productCategory: product.category,
       productCode: product.code,
       unit: product.unit,
@@ -809,7 +1066,9 @@ const batchAddProducts = () => {
       quantity: 1,
       discount: 100,
       totalPrice: product.price * 1 * (100 / 100),
-      remarks: ''
+      remarks: '',
+      deliveryPeriod: product.deliveryPeriod || '',
+      warrantyPeriod: product.warrantyPeriod || ''
     }
     opportunityProducts.value.push(newProduct)
   })
@@ -830,6 +1089,7 @@ const submitForm = async () => {
   await formRef.value.validate(async (valid: boolean) => {
     if (valid) {
       try {
+        rememberPaymentTerm(form.deliveryPeriod)
         if (form.id) {
           // 更新商机
           await request.put(`/opportunities/${form.id}`, form)
@@ -842,7 +1102,7 @@ const submitForm = async () => {
           ElMessage.success('更新成功')
         } else {
           // 创建商机
-          const newOpportunity = await request.post('/opportunities', form)
+          const newOpportunity: any = await request.post('/opportunities', form)
           // 添加产品
           if (opportunityProducts.value.length > 0) {
             await request.put(`/opportunities/${newOpportunity.id}/products`, opportunityProducts.value)
@@ -878,6 +1138,7 @@ const resetForm = () => {
     problemSolved: '',
     budget: '',
     competitor: '',
+    deliveryPeriod: '',
     ecommerceSales: '',
     offlineSales: '',
     stage: 'negotiating',
@@ -939,6 +1200,7 @@ onMounted(() => {
   fetchProducts()
   fetchUsers()
   loadSettings()
+  loadPaymentTermsMemory()
 })
 </script>
 
@@ -964,6 +1226,9 @@ onMounted(() => {
   display: flex;
   gap: 10px;
   align-items: center;
+}
+.dashboard-entry-hint {
+  margin-bottom: 16px;
 }
 .amount-text {
   color: #f56c6c;

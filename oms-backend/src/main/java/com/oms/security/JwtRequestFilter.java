@@ -32,13 +32,30 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain)
             throws ServletException, IOException {
 
-        // 检查是否是允许的路径，如果是则跳过JWT验证
+        // 检查是否是允许的路径，如果是则跳过JWT验证（同时检查 servletPath 与 requestURI，兼容代理/context-path）
         String path = request.getServletPath();
-        
-        // 登录、注册、上传、debug、测试电子章、条码等路径跳过JWT验证（与 SecurityConfig permitAll 一致）
-        if (path.startsWith("/api/auth/") || path.startsWith("/uploads/") || path.startsWith("/api/files/") || path.startsWith("/api/upload")
-                || path.startsWith("/api/debug/") || path.startsWith("/api/barcode/")
-                || "/api/contracts/seal-test".equals(path) || "/api/logistics/query".equals(path)) {
+        String uri = request.getRequestURI();
+        String safePath = path != null ? path : "";
+        boolean isCaptcha = (path != null && path.contains("/api/auth/captcha")) || (uri != null && uri.contains("/api/auth/captcha"));
+        boolean isApiRequest = safePath.startsWith("/api/");
+
+        // 前端路由刷新请求（非 /api/**）直接放行，交给 SPA fallback 返回 index.html
+        if (!isApiRequest) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        if ("/".equals(safePath) || "/index.html".equals(safePath) || safePath.startsWith("/static/") || safePath.startsWith("/assets/") || "/favicon.ico".equals(safePath)
+                || "/api/auth/login".equals(safePath) || "/api/auth/register".equals(safePath) || isCaptcha
+                || safePath.startsWith("/uploads/")
+                // /api/files/preview 需携带 JWT 以便按用户公司抬头/订单可见性鉴权，不可在此跳过认证
+                || (safePath.startsWith("/api/files/") && !safePath.startsWith("/api/files/preview"))
+                || safePath.startsWith("/api/upload")
+                || safePath.startsWith("/api/debug/") || safePath.startsWith("/api/barcode/")
+                || "/api/contracts/seal-test".equals(safePath) || "/api/logistics/query".equals(safePath)
+                || safePath.startsWith("/api/jd/oauth/")
+                || "/api/jd/tracking/push".equals(safePath)
+                || (safePath.startsWith("/api/contracts/") && safePath.endsWith("/placeholder-report"))) {
             chain.doFilter(request, response);
             return;
         }

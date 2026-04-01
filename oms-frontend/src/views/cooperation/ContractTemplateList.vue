@@ -1,5 +1,5 @@
 <template>
-  <div class="contract-template-list">
+  <div class="contract-template-list mobile-list-layout">
     <el-card class="filter-card">
       <el-form :inline="true" :model="filterForm">
         <el-form-item label="模板名称">
@@ -16,6 +16,7 @@
       <div class="table-ops">
         <el-button type="primary" @click="handleAdd">上传合同模板</el-button>
       </div>
+      <div class="table-wrapper">
       <el-table :data="tableData" style="width: 100%" border stripe size="small" v-loading="loading">
         <el-table-column type="selection" width="55" />
         <el-table-column label="操作" width="200" fixed>
@@ -37,6 +38,7 @@
         <el-table-column prop="createTime" label="创建时间" width="160" />
         <el-table-column prop="updateTime" label="更新时间" width="160" />
       </el-table>
+      </div>
 
       <div class="pagination-container">
         <el-pagination

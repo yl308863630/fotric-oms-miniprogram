@@ -13,7 +13,13 @@ import java.util.Optional;
 @Repository
 public interface ContractRepository extends JpaRepository<Contract, Long>, JpaSpecificationExecutor<Contract> {
     Optional<Contract> findByContractNo(String contractNo);
+    Optional<Contract> findFirstByContractNoStartingWithOrderByContractNoDesc(String prefix);
     Optional<Contract> findBySalesOrderId(Long salesOrderId);
     List<Contract> findAllBySalesOrderId(Long salesOrderId);
+    List<Contract> findAllBySalesOrderIdInOrderByIdDesc(List<Long> salesOrderIds);
+    List<Contract> findByMasterIdOrderByIdDesc(Long masterId);
+    List<Contract> findAllByMergeSelectionKeyInOrderByIdDesc(List<String> mergeSelectionKeys);
+    Optional<Contract> findFirstByMasterIdAndSalesIdAndMergeSelectionKeyOrderByIdDesc(Long masterId, Long salesId, String mergeSelectionKey);
+    List<Contract> findByStatusAndPartyBSignedFalse(String status);
     Page<Contract> findByStatus(String status, Pageable pageable);
 }

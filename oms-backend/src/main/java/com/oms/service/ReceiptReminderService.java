@@ -4,12 +4,14 @@ import com.oms.entity.SalesOrder;
 import com.oms.repository.SalesOrderRepository;
 import com.oms.util.HolidayUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -23,6 +25,9 @@ public class ReceiptReminderService {
 
     @Autowired
     private OperationLogService operationLogService;
+
+    @Value("${oms.notifications.receipt-slip-reminder-at-mobiles:}")
+    private String receiptSlipReminderAtMobiles;
 
     @Scheduled(cron = "0 0 9 * * ?")
     @Transactional
@@ -69,8 +74,7 @@ public class ReceiptReminderService {
 
     private void sendReminderNotification(SalesOrder order, String days) {
         try {
-            // @rxkj-sw 和 rxkj-ck 的手机号（需要根据实际情况填写）
-            List<String> atMobiles = List.of();
+            List<String> atMobiles = parseConfiguredMobiles(receiptSlipReminderAtMobiles);
             
             String title = "📋 签收单回传提醒";
             String text = String.format(
@@ -109,5 +113,16 @@ public class ReceiptReminderService {
             System.err.println("发送签收单回传提醒失败，订单号：" + order.getOmsOrderNo() + "，错误：" + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private List<String> parseConfiguredMobiles(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(raw.split("[,，]"))
+                .map(value -> value == null ? "" : value.trim())
+                .filter(value -> !value.isEmpty())
+                .distinct()
+                .toList();
     }
 }

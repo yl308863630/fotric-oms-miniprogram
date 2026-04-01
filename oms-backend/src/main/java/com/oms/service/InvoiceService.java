@@ -60,17 +60,30 @@ public class InvoiceService {
         }
 
         List<com.oms.entity.SalesOrder> orders = salesOrderRepository.findAllById(ids);
+        com.oms.entity.SalesOrder firstOrder = orders.get(0);
 
         Invoice invoice = new Invoice();
         invoice.setBillNo("INV" + System.currentTimeMillis());
-        invoice.setProjectName(projectName);
+        invoice.setProjectName(projectName != null ? projectName : "");
         invoice.setStatus("DRAFT");
-        
+
         BigDecimal totalAmount = orders.stream()
             .map(com.oms.entity.SalesOrder::getTaxIncludedTotal)
+            .filter(java.util.Objects::nonNull)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         invoice.setAmount(totalAmount);
-        
+        invoice.setPreTaxAmount(totalAmount);
+        invoice.setTaxAmount(BigDecimal.ZERO);
+
+        String buyer = firstOrder.getTopLevelCustomerName() != null && !firstOrder.getTopLevelCustomerName().isBlank()
+            ? firstOrder.getTopLevelCustomerName()
+            : (firstOrder.getPlatformName() != null && !firstOrder.getPlatformName().isBlank() ? firstOrder.getPlatformName() : "购方待填");
+        String seller = firstOrder.getOperationEntityTitle() != null && !firstOrder.getOperationEntityTitle().isBlank()
+            ? firstOrder.getOperationEntityTitle()
+            : (firstOrder.getPlatformName() != null && !firstOrder.getPlatformName().isBlank() ? firstOrder.getPlatformName() : "销方待填");
+        invoice.setBuyerName(buyer);
+        invoice.setSellerName(seller);
+
         Invoice savedInvoice = invoiceRepository.save(invoice);
 
         // 更新订单状态为“已对账”（或类似状态，防止重复生成）

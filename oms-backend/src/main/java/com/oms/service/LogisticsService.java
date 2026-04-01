@@ -9,9 +9,6 @@ import com.oms.repository.SalesOrderRepository;
 import com.oms.util.LogisticsCompanyCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -35,6 +32,9 @@ public class LogisticsService {
     @Autowired
     private SfExpressApiService sfExpressApiService;
 
+    @Autowired
+    private JdLogisticsClient jdLogisticsClient;
+
     private final RestTemplate restTemplate = new RestTemplate();
 
     public LogisticsTrace queryLogistics(String companyName, String trackingNumber, String checkPhoneNo) {
@@ -50,7 +50,8 @@ public class LogisticsService {
             if (LogisticsCompanyCode.isShunfeng(companyName)) {
                 String phoneNo = checkPhoneNo;
                 if ((phoneNo == null || phoneNo.trim().isEmpty()) && trackingNumber != null && !trackingNumber.trim().isEmpty()) {
-                    List<SalesOrder> orders = salesOrderRepository.findByTrackingNumber(trackingNumber.trim());
+                    String tn = trackingNumber.trim();
+                    List<SalesOrder> orders = salesOrderRepository.findByTrackingNumber(tn);
                     if (!orders.isEmpty()) {
                         SalesOrder ord = orders.get(0);
                         String rp = ord.getReceiverPhone();
@@ -69,10 +70,53 @@ public class LogisticsService {
                         }
                         if (rp != null && !rp.trim().isEmpty()) phoneNo = rp;
                     }
+                    // 回单运单号存在 return_receipt_tracking_number，与母单不同；优先回单收件手机
+                    if ((phoneNo == null || phoneNo.trim().isEmpty())) {
+                        List<SalesOrder> retOrders = salesOrderRepository.findByReturnReceiptTrackingNumber(tn);
+                        if (!retOrders.isEmpty()) {
+                            SalesOrder ord = retOrders.get(0);
+                            String rr = ord.getReturnReceiptReceiverPhone();
+                            if (rr != null && !rr.trim().isEmpty()) {
+                                phoneNo = rr;
+                            } else {
+                                String rp = ord.getReceiverPhone();
+                                if (rp == null || rp.trim().isEmpty()) {
+                                    try {
+                                        String details = ord.getOrderDetails();
+                                        if (details != null && !details.isEmpty()) {
+                                            JsonNode detailsNode = objectMapper.readTree(details);
+                                            JsonNode logistics = detailsNode.path("logistics");
+                                            if (logistics.isArray() && logistics.size() > 0) {
+                                                String fromLogistics = logistics.get(0).path("receiverPhone").asText("");
+                                                if (fromLogistics != null && !fromLogistics.trim().isEmpty()) rp = fromLogistics;
+                                            }
+                                        }
+                                    } catch (Exception ignored) { }
+                                }
+                                if (rp != null && !rp.trim().isEmpty()) phoneNo = rp;
+                            }
+                        }
+                    }
                 }
                 return sfExpressApiService.searchRoutes(trackingNumber, phoneNo);
             } else if (LogisticsCompanyCode.isJD(companyName)) {
-                return queryJD(companyName, trackingNumber);
+                LogisticsTrace jdResult = jdLogisticsClient.queryOrderStatus(companyName, trackingNumber);
+                boolean hasOnlineTraces = jdResult != null
+                        && Boolean.TRUE.equals(jdResult.getIsSuccess())
+                        && jdResult.getTraces() != null
+                        && !jdResult.getTraces().isEmpty();
+                if (hasOnlineTraces) {
+                    return jdResult;
+                }
+
+                LogisticsTrace pushed = queryPushedJdTraces(companyName, trackingNumber);
+                if (pushed != null) {
+                    if (jdResult != null && jdResult.getMessage() != null && !jdResult.getMessage().isBlank()) {
+                        pushed.setMessage(jdResult.getMessage() + "；已回退显示京东推送轨迹");
+                    }
+                    return pushed;
+                }
+                return jdResult;
             } else {
                 return queryKuaiDi100(companyName, trackingNumber);
             }
@@ -346,5 +390,113 @@ public class LogisticsService {
 
         result.setTraces(traces);
         return result;
+    }
+
+    /** 京东实时查询失败时，回退到 order_details.logistics 中的 JD_PUSH 轨迹。 */
+    private LogisticsTrace queryPushedJdTraces(String companyName, String trackingNumber) {
+        if (trackingNumber == null || trackingNumber.trim().isEmpty()) {
+            return null;
+        }
+
+        List<SalesOrder> candidates = new ArrayList<>();
+        candidates.addAll(salesOrderRepository.findByTrackingNumber(trackingNumber.trim()));
+        candidates.addAll(salesOrderRepository.findByReturnReceiptTrackingNumber(trackingNumber.trim()));
+        if (candidates.isEmpty()) {
+            return null;
+        }
+
+        for (SalesOrder so : candidates) {
+            try {
+                String detailsRaw = so.getOrderDetails();
+                if (detailsRaw == null || detailsRaw.isBlank()) {
+                    continue;
+                }
+                JsonNode details = objectMapper.readTree(detailsRaw);
+                JsonNode logistics = details.path("logistics");
+                if (!logistics.isArray() || logistics.size() == 0) {
+                    continue;
+                }
+
+                List<LogisticsTrace.TraceItem> traces = new ArrayList<>();
+                for (JsonNode node : logistics) {
+                    String source = node.path("source").asText("");
+                    if (!source.isBlank() && !"JD_PUSH".equalsIgnoreCase(source)) {
+                        continue;
+                    }
+                    String desc = firstNonBlank(
+                            node.path("desc").asText(""),
+                            node.path("remark").asText(""),
+                            node.path("content").asText("")
+                    );
+                    // 调试压测产生的“test/测试”文案不展示到生产物流轨迹
+                    if ("test".equalsIgnoreCase(desc.trim()) || "测试".equals(desc.trim())) {
+                        continue;
+                    }
+                    String status = firstNonBlank(
+                            node.path("statusDesc").asText(""),
+                            node.path("status").asText(""),
+                            toStatusText(
+                                    firstNonBlank(node.path("operationCode").asText(""), node.path("status").asText("")),
+                                    node.path("operationType").asText(""),
+                                    desc
+                            )
+                    );
+                    LogisticsTrace.TraceItem item = new LogisticsTrace.TraceItem();
+                    item.setTime(firstNonBlank(
+                            node.path("time").asText(""),
+                            node.path("operationTime").asText(""),
+                            node.path("createTime").asText("")
+                    ));
+                    item.setStatus(status);
+                    item.setDesc(desc);
+                    traces.add(item);
+                }
+
+                if (!traces.isEmpty()) {
+                    LogisticsTrace result = new LogisticsTrace();
+                    result.setCompany(companyName);
+                    result.setTrackingNumber(trackingNumber);
+                    result.setTraces(traces);
+                    result.setStatus(traces.get(0).getStatus());
+                    result.setIsSuccess(true);
+                    return result;
+                }
+            } catch (Exception ex) {
+                log.warn("读取京东推送轨迹回退数据失败, orderId={}", so.getId(), ex);
+            }
+        }
+        return null;
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) return "";
+        for (String v : values) {
+            if (v != null && !v.isBlank()) return v;
+        }
+        return "";
+    }
+
+    private String toStatusText(String operationCode, String operationType, String desc) {
+        String code = operationCode == null ? "" : operationCode.trim();
+        String type = operationType == null ? "" : operationType.trim();
+        if ("1001".equals(type)) return "已揽收";
+        if ("2003".equals(type)) return "运输中";
+        if ("3001".equals(type) || "3002".equals(type)) return "派送中";
+        if ("4001".equals(type) || "5003".equals(type) || "510".equals(code)) return "已签收";
+        if ("5001".equals(type) || "5002".equals(type)) return "异常";
+        if (desc != null && (desc.contains("已由本人签收")
+                || desc.contains("本人签收")
+                || desc.contains("派送至本人")
+                || desc.contains("已派送至本人")
+                || desc.contains("投递至本人")
+                || desc.contains("已投递至本人")
+                || desc.contains("已妥投")
+                || desc.contains("已代收"))) {
+            return "已签收";
+        }
+        if (desc != null && desc.contains("签收")) return "已签收";
+        if (desc != null && (desc.contains("派送") || desc.contains("派件"))) return "派送中";
+        if (desc != null && (desc.contains("运输") || desc.contains("发往下一站") || desc.contains("到达"))) return "运输中";
+        return "在途中";
     }
 }

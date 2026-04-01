@@ -19,6 +19,7 @@ public class OpportunityProduct {
     private Long productId;
     private String productName;
     private String productModel;
+    private String productConfig;
     private String productCategory;
     private String productCode;
     private String unit;
@@ -27,6 +28,8 @@ public class OpportunityProduct {
     private Integer quantity;
     private BigDecimal discount = BigDecimal.valueOf(100);
     private BigDecimal totalPrice;
+    private String deliveryPeriod;
+    private String warrantyPeriod;
     private String remarks;
 
     @PrePersist

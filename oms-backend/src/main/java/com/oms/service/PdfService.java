@@ -21,6 +21,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -29,11 +32,51 @@ public class PdfService {
     @Value("${upload.dir:uploads}")
     private String uploadDir;
 
+    /** 为 true 时优先用 LibreOffice 将 Word 转 PDF（Linux 上正文中文可正常显示），无 LibreOffice 时回退到 Java 转换 */
+    @Value("${contract.use-libreoffice-pdf:true}")
+    private boolean useLibreOfficeForPdf;
+
     private Path resolveFilePath(String url) {
         if (url.startsWith("/uploads/")) {
             return Paths.get(uploadDir, url.substring("/uploads/".length()));
         }
         return Paths.get(uploadDir, url);
+    }
+
+    /**
+     * 使用 LibreOffice 将 docx 转为 PDF，便于 Linux 上合同正文中文正常显示。
+     * 若未安装或执行失败返回 null，调用方会回退到 Java 转换。
+     */
+    private Path convertDocxToPdfWithLibreOffice(Path docxFile, Path targetDir, String baseFileName) {
+        String[] commands = new String[]{"soffice", "/usr/bin/soffice", "libreoffice"};
+        Path outPdf = targetDir.resolve(baseFileName + ".pdf");
+        for (String cmd : commands) {
+            try {
+                List<String> args = new ArrayList<>();
+                args.add(cmd);
+                args.add("--headless");
+                args.add("--convert-to");
+                args.add("pdf");
+                args.add("--outdir");
+                args.add(targetDir.toAbsolutePath().toString());
+                args.add(docxFile.toAbsolutePath().toString());
+                ProcessBuilder pb = new ProcessBuilder(args);
+                pb.redirectErrorStream(true);
+                Process p = pb.start();
+                boolean finished = p.waitFor(120, TimeUnit.SECONDS);
+                if (!finished) {
+                    p.destroyForcibly();
+                    continue;
+                }
+                if (Files.exists(outPdf) && Files.size(outPdf) > 0) {
+                    System.out.println("  LibreOffice 转 PDF 成功: " + outPdf);
+                    return outPdf;
+                }
+            } catch (Exception e) {
+                System.err.println("  LibreOffice 转换尝试 (" + cmd + ") 失败: " + e.getMessage());
+            }
+        }
+        return null;
     }
 
     public String convertDocxToImage(String docxPath) {
@@ -53,18 +96,25 @@ public class PdfService {
 
             String baseFileName = docxFile.getFileName().toString().replace(".docx", "");
             Path tempPdfPath = targetDir.resolve(baseFileName + "_temp.pdf");
+            Path pdfPath = null;
 
             System.out.println("1. 开始转换Word到PDF...");
-            try (InputStream in = Files.newInputStream(docxFile);
-                 XWPFDocument document = new XWPFDocument(in);
-                 OutputStream out = Files.newOutputStream(tempPdfPath)) {
-                PdfOptions options = PdfOptions.create();
-                PdfConverter.getInstance().convert(document, out, options);
+            if (useLibreOfficeForPdf) {
+                pdfPath = convertDocxToPdfWithLibreOffice(docxFile, targetDir, baseFileName);
             }
-            System.out.println("Word转PDF完成，文件大小: " + Files.size(tempPdfPath));
+            if (pdfPath == null || !Files.exists(pdfPath)) {
+                try (InputStream in = Files.newInputStream(docxFile);
+                     XWPFDocument document = new XWPFDocument(in);
+                     OutputStream out = Files.newOutputStream(tempPdfPath)) {
+                    PdfOptions options = PdfOptions.create();
+                    PdfConverter.getInstance().convert(document, out, options);
+                }
+                pdfPath = tempPdfPath;
+            }
+            System.out.println("Word转PDF完成，文件大小: " + (Files.exists(pdfPath) ? Files.size(pdfPath) : 0));
 
             System.out.println("2. 开始转换PDF到所有页图片...");
-            String firstImageUrl = convertPdfToAllImages(tempPdfPath, targetDir, baseFileName);
+            String firstImageUrl = convertPdfToAllImages(pdfPath, targetDir, baseFileName);
             System.out.println("PDF转图片完成，第一张图片: " + firstImageUrl);
 
             System.out.println("3. 打包所有图片成ZIP...");
@@ -73,6 +123,7 @@ public class PdfService {
 
             System.out.println("4. 删除临时PDF和原始Word文件...");
             Files.deleteIfExists(tempPdfPath);
+            if (pdfPath != null && !pdfPath.equals(tempPdfPath)) Files.deleteIfExists(pdfPath);
             Files.deleteIfExists(docxFile);
             System.out.println("临时文件已删除");
 
@@ -154,24 +205,31 @@ public class PdfService {
             String baseFileName = docxFile.getFileName().toString().replace(".docx", "");
             Path tempPdfPath = targetDir.resolve(baseFileName + "_temp.pdf");
             Path protectedPdfPath = targetDir.resolve(baseFileName + "_protected.pdf");
+            Path pdfPath = null;
 
             System.out.println("1. 开始转换Word到PDF...");
-            try (InputStream in = Files.newInputStream(docxFile);
-                 XWPFDocument document = new XWPFDocument(in);
-                 OutputStream out = Files.newOutputStream(tempPdfPath)) {
-                PdfOptions options = PdfOptions.create();
-                PdfConverter.getInstance().convert(document, out, options);
+            if (useLibreOfficeForPdf) {
+                pdfPath = convertDocxToPdfWithLibreOffice(docxFile, targetDir, baseFileName);
             }
-            System.out.println("Word转PDF完成，文件大小: " + Files.size(tempPdfPath));
+            if (pdfPath == null || !Files.exists(pdfPath)) {
+                try (InputStream in = Files.newInputStream(docxFile);
+                     XWPFDocument document = new XWPFDocument(in);
+                     OutputStream out = Files.newOutputStream(tempPdfPath)) {
+                    PdfOptions options = PdfOptions.create();
+                    PdfConverter.getInstance().convert(document, out, options);
+                }
+                pdfPath = tempPdfPath;
+            }
+            System.out.println("Word转PDF完成，文件大小: " + (Files.exists(pdfPath) ? Files.size(pdfPath) : 0));
 
             System.out.println("2. 开始转换PDF到图片...");
-            convertPdfToImages(tempPdfPath, targetDir, baseFileName);
+            convertPdfToImages(pdfPath, targetDir, baseFileName);
             System.out.println("PDF转图片完成");
 
             System.out.println("3. 开始保护PDF...");
             PdfReader reader = null;
             try (OutputStream out = Files.newOutputStream(protectedPdfPath)) {
-                reader = new PdfReader(tempPdfPath.toAbsolutePath().toString());
+                reader = new PdfReader(pdfPath.toAbsolutePath().toString());
                 PdfStamper stamper = new PdfStamper(reader, out);
                 stamper.setEncryption(
                     null,
@@ -189,6 +247,7 @@ public class PdfService {
 
             System.out.println("4. 删除临时PDF文件...");
             Files.deleteIfExists(tempPdfPath);
+            if (pdfPath != null && !pdfPath.equals(tempPdfPath)) Files.deleteIfExists(pdfPath);
 
             String resultUrl = "/uploads/" + dateStr + "/" + baseFileName + "_protected.pdf";
             System.out.println("=== convertDocxToProtectedPdf 完成: " + resultUrl + " ===");

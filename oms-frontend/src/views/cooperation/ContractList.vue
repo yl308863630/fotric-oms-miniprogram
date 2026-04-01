@@ -1,15 +1,19 @@
 <template>
-  <div class="contract-list">
+  <div class="contract-list mobile-list-layout">
     <el-card class="filter-card">
       <el-form :inline="true" :model="filterForm">
         <el-form-item label="合同编号">
           <el-input v-model="filterForm.contractNo" placeholder="请输入合同编号" />
         </el-form-item>
         <el-form-item label="合同状态">
-          <el-select v-model="filterForm.status" placeholder="请选择合同状态" clearable>
+          <el-select v-model="filterForm.status" placeholder="全部" clearable>
+            <el-option label="全部" value="" />
             <el-option label="草稿" value="草稿" />
-            <el-option label="待签署" value="待签署" />
+            <el-option label="待签署（待我方乙方签署）" value="待签署" />
             <el-option label="已签署" value="已签署" />
+            <el-option label="已失效待重生成" value="已失效待重生成" />
+            <el-option label="已失效" value="已失效" />
+            <el-option label="已重生成" value="已重生成" />
             <el-option label="已归档" value="已归档" />
           </el-select>
         </el-form-item>
@@ -70,13 +74,21 @@
           </div>
         </el-popover>
       </div>
+      <div class="table-wrapper">
       <el-table :data="tableData" style="width: 100%" border stripe size="small" v-loading="loading">
         <el-table-column type="selection" width="55" />
         <el-table-column label="操作" width="300" fixed>
           <template #default="scope">
             <el-button link type="primary" @click="handleView(scope.row)">详情</el-button>
             <el-button link type="primary" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button link type="warning" @click="handleSignPartyB(scope.row)" v-if="canSignPartyB(scope.row)" :loading="signingPartyB">乙方签署</el-button>
+            <el-button
+              v-if="canRegenerate(scope.row)"
+              link
+              type="success"
+              @click="handleRegenerate(scope.row)"
+              :loading="regeneratingId === scope.row.id"
+            >按剩余商品重生成</el-button>
+            <el-button link type="warning" @click="handleSignPartyB(scope.row)" v-if="canSignPartyB(scope.row)" :loading="signingPartyBId === scope.row.id">乙方签署</el-button>
             <el-button link type="warning" @click="handleDownload(scope.row)" :loading="downloadingId === scope.row.id">下载</el-button>
             <el-button link type="danger" @click="handleDelete(scope.row)">删除</el-button>
           </template>
@@ -116,6 +128,7 @@
           </el-table-column>
         </template>
       </el-table>
+      </div>
 
       <div class="pagination-container">
         <el-pagination
@@ -130,7 +143,7 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="showDetailDialog" title="合同详情" width="800px">
+    <el-dialog v-model="showDetailDialog" title="合同详情" width="980px">
       <el-descriptions v-if="currentContract" :column="2" border>
         <el-descriptions-item label="合同编号">{{ currentContract.contractNo }}</el-descriptions-item>
         <el-descriptions-item label="状态">
@@ -138,17 +151,34 @@
         </el-descriptions-item>
         <el-descriptions-item label="甲方名称">{{ currentContract.partyAName }}</el-descriptions-item>
         <el-descriptions-item label="乙方名称">{{ currentContract.partyBName }}</el-descriptions-item>
-        <el-descriptions-item label="产品型号">{{ currentContract.productModel }}</el-descriptions-item>
-        <el-descriptions-item label="物料号">{{ currentContract.materialNo }}</el-descriptions-item>
-        <el-descriptions-item label="数量">{{ currentContract.quantity }}</el-descriptions-item>
-        <el-descriptions-item label="单价">¥{{ currentContract.unitPrice }}</el-descriptions-item>
+        <el-descriptions-item label="合同范围">
+          {{ isAggregateContract(currentContract) ? `聚合合同（${contractLineItems.length}行）` : '单行合同' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="摘要金额">¥{{ formatMoney(currentContract.totalAmount) }}</el-descriptions-item>
         <el-descriptions-item label="总金额">¥{{ currentContract.totalAmount }}</el-descriptions-item>
         <el-descriptions-item label="签署日期">{{ currentContract.signDate }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ currentContract.createTime }}</el-descriptions-item>
       </el-descriptions>
+      <div v-if="contractLineItems.length" class="contract-lines-block">
+        <div class="contract-lines-title">商品行明细</div>
+        <el-table :data="contractLineItems" border stripe size="small">
+          <el-table-column type="index" label="#" width="60" />
+          <el-table-column prop="productName" label="商品名称" min-width="150" show-overflow-tooltip />
+          <el-table-column prop="model" label="产品型号" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="materialNo" label="物料号" min-width="140" show-overflow-tooltip />
+          <el-table-column prop="quantity" label="数量" width="90" align="center" />
+          <el-table-column label="含税单价" width="120" align="right">
+            <template #default="scope">¥{{ formatMoney(scope.row.taxIncludedPrice) }}</template>
+          </el-table-column>
+          <el-table-column label="含税总价" width="140" align="right">
+            <template #default="scope">¥{{ formatMoney(scope.row.taxIncludedTotal) }}</template>
+          </el-table-column>
+          <el-table-column prop="omsOrderNo" label="OMS订单号" min-width="140" show-overflow-tooltip />
+        </el-table>
+      </div>
     </el-dialog>
 
-    <el-dialog v-model="showEditDialog" title="编辑合同" width="800px">
+    <el-dialog v-model="showEditDialog" title="编辑合同" width="980px">
       <el-form v-if="currentContract" :model="editForm" label-width="120px">
         <el-form-item label="合同编号">
           <el-input v-model="editForm.contractNo" disabled />
@@ -159,18 +189,48 @@
         <el-form-item label="乙方名称">
           <el-input v-model="editForm.partyBName" />
         </el-form-item>
-        <el-form-item label="产品型号">
-          <el-input v-model="editForm.productModel" />
-        </el-form-item>
-        <el-form-item label="数量">
-          <el-input-number v-model="editForm.quantity" :min="1" />
-        </el-form-item>
-        <el-form-item label="单价">
-          <el-input-number v-model="editForm.unitPrice" :min="0" :precision="2" />
-        </el-form-item>
-        <el-form-item label="总金额">
-          <el-input-number v-model="editForm.totalAmount" :min="0" :precision="2" />
-        </el-form-item>
+        <template v-if="!isAggregateContract(currentContract)">
+          <el-form-item label="产品型号">
+            <el-input v-model="editForm.productModel" />
+          </el-form-item>
+          <el-form-item label="数量">
+            <el-input-number v-model="editForm.quantity" :min="1" />
+          </el-form-item>
+          <el-form-item label="单价">
+            <el-input-number v-model="editForm.unitPrice" :min="0" :precision="2" />
+          </el-form-item>
+          <el-form-item label="总金额">
+            <el-input-number v-model="editForm.totalAmount" :min="0" :precision="2" />
+          </el-form-item>
+        </template>
+        <template v-else>
+          <el-alert
+            type="info"
+            :closable="false"
+            title="聚合合同的商品、数量、单价、金额应按商品行展示，不再在这里用一组汇总字段直接修改。若商品范围变化，应重新生成合同。"
+            style="margin-bottom: 16px;"
+          />
+          <el-form-item label="摘要金额">
+            <el-input :model-value="`¥${formatMoney(editForm.totalAmount)}`" disabled />
+          </el-form-item>
+          <div class="contract-lines-block">
+            <div class="contract-lines-title">当前合同商品行</div>
+            <el-table :data="contractLineItems" border stripe size="small">
+              <el-table-column type="index" label="#" width="60" />
+              <el-table-column prop="productName" label="商品名称" min-width="150" show-overflow-tooltip />
+              <el-table-column prop="model" label="产品型号" min-width="180" show-overflow-tooltip />
+              <el-table-column prop="materialNo" label="物料号" min-width="140" show-overflow-tooltip />
+              <el-table-column prop="quantity" label="数量" width="90" align="center" />
+              <el-table-column label="含税单价" width="120" align="right">
+                <template #default="scope">¥{{ formatMoney(scope.row.taxIncludedPrice) }}</template>
+              </el-table-column>
+              <el-table-column label="含税总价" width="140" align="right">
+                <template #default="scope">¥{{ formatMoney(scope.row.taxIncludedTotal) }}</template>
+              </el-table-column>
+              <el-table-column prop="omsOrderNo" label="OMS订单号" min-width="140" show-overflow-tooltip />
+            </el-table>
+          </div>
+        </template>
         <el-form-item label="签署日期">
           <el-date-picker v-model="editForm.signDate" type="date" value-format="YYYY-MM-DD" />
         </el-form-item>
@@ -184,7 +244,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import draggable from 'vuedraggable'
 import request from '@/utils/request'
@@ -207,8 +268,11 @@ interface Contract {
   id: number
   contractNo: string
   salesOrderId?: number
+  masterId?: number
   salesId?: number
   salesName?: string
+  contractScope?: string
+  mergedSalesOrderIds?: string
   partyAName?: string
   partyAAddress?: string
   partyABank?: string
@@ -221,6 +285,7 @@ interface Contract {
   partyBAccount?: string
   partyBTaxNo?: string
   partyBPhone?: string
+  partyBSigned?: boolean
   productName?: string
   productModel?: string
   materialNo?: string
@@ -241,16 +306,31 @@ interface Contract {
   updateTime?: string
 }
 
+interface ContractLineItem {
+  id: number
+  omsOrderNo?: string
+  productName?: string
+  model?: string
+  materialNo?: string
+  quantity?: number
+  taxIncludedPrice?: number
+  taxIncludedTotal?: number
+}
+
 const filterForm = ref<FilterForm>({
   contractNo: '',
   status: ''
 })
+const route = useRoute()
 
 const tableData = ref<Contract[]>([])
 const loading = ref(false)
-const signingPartyB = ref(false)
+/** 当前正在乙方签署的合同 id，仅该行显示 loading */
+const signingPartyBId = ref<number | null>(null)
 /** 当前正在下载的合同 id，仅该行显示 loading */
 const downloadingId = ref<number | null>(null)
+/** 当前正在重生成的合同 id，仅该行显示 loading */
+const regeneratingId = ref<number | null>(null)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
@@ -258,6 +338,7 @@ const showDetailDialog = ref(false)
 const showEditDialog = ref(false)
 const currentContract = ref<Contract | null>(null)
 const editForm = ref<any>({})
+const contractLineItems = ref<ContractLineItem[]>([])
 
 const allColumns = ref<ColumnConfig[]>([
   { label: 'contractNo', title: '合同编号', width: 150, visible: true },
@@ -364,13 +445,15 @@ const onDragEnd = () => {
 const fetchContracts = async () => {
   loading.value = true
   try {
-    const res: any = await request.get('/contracts', {
-      params: {
-        ...filterForm.value,
-        page: currentPage.value - 1,
-        size: pageSize.value
-      }
-    })
+    const params: Record<string, unknown> = {
+      page: currentPage.value - 1,
+      size: pageSize.value
+    }
+    const cn = (filterForm.value.contractNo || '').trim()
+    const st = (filterForm.value.status || '').trim()
+    if (cn) params.contractNo = cn
+    if (st) params.status = st
+    const res: any = await request.get('/contracts', { params })
     tableData.value = res.content || []
     total.value = res.totalElements || 0
   } catch (error) {
@@ -379,6 +462,12 @@ const fetchContracts = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const applyRouteQuery = () => {
+  const q = route.query
+  filterForm.value.contractNo = q.contractNo !== undefined ? String(q.contractNo) : ''
+  filterForm.value.status = q.status !== undefined ? String(q.status) : ''
 }
 
 const handleSearch = () => {
@@ -407,20 +496,85 @@ const getStatusType = (status: string) => {
   switch (status) {
     case '已签署': return 'success'
     case '待签署': return 'warning'
+    case '已失效待重生成': return 'danger'
+    case '已失效': return 'info'
+    case '已重生成': return 'success'
     case '草稿': return 'info'
     case '已归档': return 'info'
     default: return 'info'
   }
 }
 
-const handleView = (row: Contract) => {
-  currentContract.value = row
+const formatMoney = (value: unknown) => {
+  const num = Number(value ?? 0)
+  return Number.isFinite(num) ? num.toFixed(2) : '0.00'
+}
+
+const parseContractOrderIds = (contract: Contract | null | undefined): number[] => {
+  if (!contract) return []
+  if (contract.contractScope === 'MASTER_SELECTION' && String(contract.mergedSalesOrderIds || '').trim()) {
+    return String(contract.mergedSalesOrderIds || '')
+      .split(',')
+      .map(part => Number(String(part || '').trim()))
+      .filter(id => Number.isFinite(id) && id > 0)
+  }
+  return contract.salesOrderId ? [Number(contract.salesOrderId)] : []
+}
+
+const isAggregateContract = (contract: Contract | null | undefined) => {
+  if (!contract) return false
+  return contract.contractScope === 'MASTER_SELECTION' || parseContractOrderIds(contract).length > 1
+}
+
+const loadContractLineItems = async (contract: Contract | null | undefined) => {
+  const ids = parseContractOrderIds(contract)
+  if (!ids.length) {
+    contractLineItems.value = []
+    return
+  }
+  const rows = await Promise.all(ids.map(async (id) => {
+    const res: any = await request.get(`/sales-orders/${id}`)
+    const order = res?.order || res || {}
+    return {
+      id: Number(order.id || id),
+      omsOrderNo: order.omsOrderNo || '-',
+      productName: order.productName || '-',
+      model: order.model || '-',
+      materialNo: order.materialNo || '-',
+      quantity: Number(order.quantity || 0),
+      taxIncludedPrice: Number(order.taxIncludedPrice || 0),
+      taxIncludedTotal: Number(order.taxIncludedTotal || order.amount || 0)
+    } as ContractLineItem
+  }))
+  contractLineItems.value = rows
+}
+
+const loadContractDetail = async (row: Contract) => {
+  const detail: any = await request.get(`/contracts/${row.id}`)
+  currentContract.value = detail
+  editForm.value = { ...detail }
+  await loadContractLineItems(detail)
+}
+
+const handleView = async (row: Contract) => {
+  try {
+    await loadContractDetail(row)
+  } catch (error) {
+    console.error('Load contract detail error:', error)
+    ElMessage.error('获取合同详情失败')
+    return
+  }
   showDetailDialog.value = true
 }
 
-const handleEdit = (row: Contract) => {
-  currentContract.value = { ...row }
-  editForm.value = { ...row }
+const handleEdit = async (row: Contract) => {
+  try {
+    await loadContractDetail(row)
+  } catch (error) {
+    console.error('Load contract edit detail error:', error)
+    ElMessage.error('获取合同详情失败')
+    return
+  }
   showEditDialog.value = true
 }
 
@@ -438,7 +592,11 @@ const handleSaveEdit = async () => {
 
 const canSignPartyB = (row: Contract) => {
   const companyTitle = localStorage.getItem('companyTitle')
-  return !row.partyBSigned && row.partyBName === companyTitle
+  return row.status === '待签署' && !row.partyBSigned && row.partyBName === companyTitle
+}
+
+const canRegenerate = (row: Contract) => {
+  return isAggregateContract(row) && row.status === '已失效待重生成'
 }
 
 const handleSignPartyB = (row: Contract) => {
@@ -448,7 +606,7 @@ const handleSignPartyB = (row: Contract) => {
     type: 'warning'
   }).then(async () => {
     try {
-      signingPartyB.value = true
+      signingPartyBId.value = row.id ?? null
       await request.post(`/contracts/${row.id}/sign`, { partyType: 'B' })
       ElMessage.success('乙方签署成功')
       fetchContracts()
@@ -456,7 +614,31 @@ const handleSignPartyB = (row: Contract) => {
       console.error('Sign contract error:', error)
       ElMessage.error(error.response?.data?.message || '合同签署失败')
     } finally {
-      signingPartyB.value = false
+      signingPartyBId.value = null
+    }
+  }).catch(() => {})
+}
+
+const handleRegenerate = (row: Contract) => {
+  ElMessageBox.confirm(
+    '将基于该历史合同剩余未退回的商品行重新生成一份新合同，旧合同会保留为历史版本。确认继续？',
+    '重生成合同',
+    {
+      confirmButtonText: '确认重生成',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      regeneratingId.value = row.id ?? null
+      await request.post(`/contracts/${row.id}/regenerate`)
+      ElMessage.success('合同已按剩余商品重生成')
+      fetchContracts()
+    } catch (error: any) {
+      console.error('Regenerate contract error:', error)
+      ElMessage.error(error?.response?.data?.message || '合同重生成失败')
+    } finally {
+      regeneratingId.value = null
     }
   }).catch(() => {})
 }
@@ -543,9 +725,21 @@ const handleDelete = (row: Contract) => {
 }
 
 onMounted(() => {
+  applyRouteQuery()
   fetchContracts()
   loadSettings()
 })
+
+watch(
+  () => ({ path: route.path, ...route.query }),
+  () => {
+    if (route.path !== '/cooperation/contract') return
+    applyRouteQuery()
+    currentPage.value = 1
+    fetchContracts()
+  },
+  { deep: true }
+)
 </script>
 
 <style scoped>
@@ -611,5 +805,13 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+.contract-lines-block {
+  margin-top: 16px;
+}
+.contract-lines-title {
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #303133;
 }
 </style>

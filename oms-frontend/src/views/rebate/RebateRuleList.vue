@@ -1,5 +1,5 @@
 <template>
-  <div class="rebate-rule-list">
+  <div class="rebate-rule-list mobile-list-layout">
     <el-card class="filter-card">
       <el-form :inline="true" :model="filterForm">
         <el-form-item label="规则名称">
@@ -69,6 +69,7 @@
           </div>
         </el-popover>
       </div>
+      <div class="table-wrapper">
       <el-table :data="tableData" style="width: 100%" border stripe size="small">
         <el-table-column type="selection" width="55" />
         <el-table-column label="操作" width="150" fixed="right">
@@ -104,6 +105,7 @@
           </el-table-column>
         </template>
       </el-table>
+      </div>
     </el-card>
   </div>
 </template>

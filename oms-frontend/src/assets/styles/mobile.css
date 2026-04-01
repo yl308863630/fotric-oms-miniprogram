@@ -1,0 +1,62 @@
+/* 移动端公共样式：列表页表格横向滚动、筛选/工具栏堆叠 */
+@media (max-width: 768px) {
+  .mobile-list-layout .filter-card .el-form,
+  .mobile-list-layout .demo-form-inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .mobile-list-layout .filter-card .el-form-item {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+  .mobile-list-layout .filter-card .el-input,
+  .mobile-list-layout .filter-card .el-select {
+    width: 100% !important;
+  }
+  .mobile-list-layout .table-toolbar,
+  .mobile-list-layout .table-ops {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .mobile-list-layout .operation-buttons {
+    flex-wrap: wrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+  }
+  .mobile-list-layout .search-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .mobile-list-layout .search-bar .el-input,
+  .mobile-list-layout .search-bar .el-select {
+    width: 100% !important;
+    margin-right: 0 !important;
+  }
+}
+
+/* 表格横向滚动容器：小屏下表格可左右滑动 */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.table-wrapper .el-table {
+  min-width: 600px;
+}
+
+/* 弹窗移动端宽度 */
+@media (max-width: 768px) {
+  .el-dialog {
+    width: 95% !important;
+    max-width: 95%;
+    margin: 2.5vh auto !important;
+  }
+  .el-dialog__body {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+}

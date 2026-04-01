@@ -7,9 +7,19 @@
     "test:api": "node flow-verification-api.js",
     "test:e2e": "node flow-verification-e2e.js",
     "test:e2e:headless": "HEADLESS=1 node flow-verification-e2e.js",
+    "test:dashboard:jump": "node dashboard-jump-regression.js",
+    "test:dashboard:rollback": "node dashboard-rollback-regression.js",
+    "test:dashboard:full": "npm run test:dashboard:jump && npm run test:dashboard:rollback",
     "test:standard": "node standard-flow-e2e.js",
     "test:standard:headless": "node standard-flow-e2e.js",
-    "test:order2": "node order2-full-e2e.js"
+    "test:order2": "node order2-full-e2e.js",
+    "test:reassign:pending": "node reassign-pending-assign-regression.js",
+    "test:sales:more-filters": "node sales-more-filters-regression.js",
+    "test:settlement:lifecycle": "node settlement-lifecycle-regression.js",
+    "test:invoice:propagation": "node invoice-propagation-regression.js",
+    "test:invoice:4hop": "node invoice-4hop-regression.js",
+    "test:virtual:4hop": "node virtual-4hop-finance-flow.js",
+    "test:virtual:4hop:logistics": "node virtual-4hop-logistics-finance-flow.js"
   },
   "keywords": [
     "oms",

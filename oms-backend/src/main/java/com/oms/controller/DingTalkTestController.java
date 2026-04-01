@@ -1,6 +1,7 @@
 package com.oms.controller;
 
 import com.oms.service.DingTalkService;
+import com.oms.service.OrderAssignReminderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +14,9 @@ public class DingTalkTestController {
 
     @Autowired
     private DingTalkService dingTalkService;
+    
+    @Autowired
+    private OrderAssignReminderService orderAssignReminderService;
 
     @GetMapping("/test")
     public String test() {
@@ -66,6 +70,16 @@ public class DingTalkTestController {
             return "库存预警通知已发送！";
         } catch (Exception e) {
             return "发送失败: " + e.getMessage();
+        }
+    }
+    
+    @GetMapping("/test-order-assign")
+    public String testOrderAssign() {
+        try {
+            orderAssignReminderService.triggerOrderAssignReminder();
+            return "订单指派提醒已触发，请查看钉钉群！";
+        } catch (Exception e) {
+            return "触发失败: " + e.getMessage();
         }
     }
 }

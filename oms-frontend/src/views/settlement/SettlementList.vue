@@ -1,5 +1,5 @@
 <template>
-  <div class="settlement-list">
+  <div class="settlement-list mobile-list-layout">
     <!-- 搜索筛选区 -->
     <el-card class="filter-card">
       <el-form :inline="true" :model="filterForm">
@@ -75,6 +75,7 @@
           </div>
         </el-popover>
       </div>
+      <div class="table-wrapper">
       <el-table :data="tableData" style="width: 100%" border stripe>
         <el-table-column type="selection" width="55" />
         <el-table-column label="操作" width="150" fixed>
@@ -108,6 +109,7 @@
           </el-table-column>
         </template>
       </el-table>
+      </div>
 
       <div class="pagination-container">
         <el-pagination

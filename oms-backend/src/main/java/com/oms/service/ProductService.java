@@ -5,7 +5,6 @@ import com.oms.repository.ProductRepository;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -147,6 +146,10 @@ public class ProductService {
     @Transactional
     public Product saveProduct(Product product) {
         if (product == null) return null;
+        // 新建商品默认上架，避免未传 isActive 时为 null
+        if (product.getId() == null && product.getIsActive() == null) {
+            product.setIsActive(true);
+        }
         return productRepository.save(product);
     }
 
@@ -165,6 +168,7 @@ public class ProductService {
         existingProduct.setModel(product.getModel());
         existingProduct.setSpecs(product.getSpecs());
         existingProduct.setProductConfig(product.getProductConfig());
+        existingProduct.setDeliveryPeriod(product.getDeliveryPeriod());
         existingProduct.setWarrantyPeriod(product.getWarrantyPeriod());
         existingProduct.setUnit(product.getUnit());
         existingProduct.setCategory(product.getCategory());

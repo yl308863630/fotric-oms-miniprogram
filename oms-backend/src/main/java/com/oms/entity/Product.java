@@ -28,6 +28,8 @@ public class Product {
 
     private String productConfig;
 
+    private String deliveryPeriod;
+
     private String warrantyPeriod;
 
     private String unit;
@@ -59,6 +61,9 @@ public class Product {
             createTime = now;
         }
         updateTime = now;
+        if (isActive == null) {
+            isActive = true;
+        }
     }
 
     @PreUpdate

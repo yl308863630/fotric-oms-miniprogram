@@ -15,7 +15,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @Configuration
@@ -52,8 +55,28 @@ public class SecurityConfig {
                     return corsConfiguration;
                 }))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/register", "/uploads/**", "/api/files/**", "/api/upload", "/api/debug/**", "/api/barcode/**", "/api/contracts/seal-test", "/api/logistics/query", "/api/dingtalk/**").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/", "/index.html", "/static/**", "/assets/**", "/favicon.ico").permitAll()
+                        // 合同等敏感文件预览 /api/files/preview 需登录并按公司/订单鉴权，不放行匿名访问
+                        .requestMatchers("/api/auth/login", "/api/auth/register", "/uploads/**", "/api/files/download/**", "/api/upload", "/api/debug/**", "/api/barcode/**", "/api/contracts/seal-test", "/api/logistics/query", "/api/orders/import-from-file", "/api/jd/oauth/**", "/api/jd/tracking/push", "/api/authorizations/verify", "/api/authorizations/verify/**").permitAll()
+                        .requestMatchers(new RequestMatcher() {
+                            @Override
+                            public boolean matches(HttpServletRequest request) {
+                                String path = request.getServletPath();
+                                String uri = request.getRequestURI();
+                                return (path != null && path.contains("/api/auth/captcha")) || (uri != null && uri.contains("/api/auth/captcha"));
+                            }
+                        }).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/auth/captcha", "GET")).permitAll()
+                        .requestMatchers(new RequestMatcher() {
+                            @Override
+                            public boolean matches(HttpServletRequest request) {
+                                String path = request.getServletPath();
+                                return path != null && path.startsWith("/api/contracts/") && path.endsWith("/placeholder-report");
+                            }
+                        }).permitAll()
+                        .requestMatchers("/api/**").authenticated()
+                        // 非 API 请求（如 /sales、/product、/purchase、/opportunity）用于前端 SPA 刷新，必须放行
+                        .anyRequest().permitAll()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);

@@ -1,5 +1,5 @@
 <template>
-  <div class="user-list" v-if="canAccessUserList">
+  <div class="user-list mobile-list-layout" v-if="canAccessUserList">
     <el-card class="filter-card">
       <el-form :inline="true" :model="filterForm">
         <el-form-item label="用户名">
@@ -12,6 +12,8 @@
           <el-select v-model="filterForm.role" placeholder="请选择角色" clearable style="width: 150px">
             <el-option label="管理员" value="ROLE_ADMIN" />
             <el-option label="工业电商" value="ROLE_ECOMMERCE" />
+            <el-option label="小安智能" value="ROLE_XIAOAN" />
+            <el-option label="工厂" value="ROLE_FACTORY" />
             <el-option label="交付方" value="ROLE_DELIVERY" />
             <el-option label="出货方" value="ROLE_SHIPPING" />
             <el-option label="仓库" value="ROLE_WAREHOUSE" />
@@ -74,6 +76,7 @@
           </div>
         </el-popover>
       </div>
+      <div class="table-wrapper">
       <el-table :data="tableData" style="width: 100%" border stripe size="small" v-loading="loading">
         <el-table-column type="selection" width="55" />
         <el-table-column label="操作" width="120" fixed>
@@ -100,12 +103,29 @@
             <template #default="scope" v-else-if="column.label === 'createTime' || column.label === 'lastLoginTime'">
               {{ formatDateTime(scope.row[column.label]) }}
             </template>
+            <template #default="scope" v-else-if="column.label === 'realName'">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span>{{ maskName(scope.row.realName) }}</span>
+                <el-button link type="primary" size="small" @click="copyUserField(scope.row, 'realName', scope.row.realName)" title="复制">
+                  <el-icon><CopyDocument /></el-icon>
+                </el-button>
+              </div>
+            </template>
+            <template #default="scope" v-else-if="column.label === 'phone'">
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span>{{ maskPhone(scope.row.phone) }}</span>
+                <el-button link type="primary" size="small" @click="copyUserField(scope.row, 'phone', scope.row.phone)" title="复制">
+                  <el-icon><CopyDocument /></el-icon>
+                </el-button>
+              </div>
+            </template>
             <template #default="scope" v-else>
               {{ scope.row[column.label] }}
             </template>
           </el-table-column>
         </template>
       </el-table>
+      </div>
 
       <div class="pagination-container">
         <el-pagination
@@ -143,6 +163,9 @@
         <el-form-item label="手机号码" prop="phone">
           <el-input v-model="userForm.phone" placeholder="请输入手机号码" />
         </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="userForm.email" placeholder="请输入邮箱（可选）" />
+        </el-form-item>
         <el-form-item label="所属部门" prop="department">
           <el-input v-model="userForm.department" placeholder="请输入所属部门" />
         </el-form-item>
@@ -150,6 +173,8 @@
           <el-select v-model="userForm.role" placeholder="请选择角色" style="width: 100%">
             <el-option label="管理员" value="ROLE_ADMIN" />
             <el-option label="工业电商" value="ROLE_ECOMMERCE" />
+            <el-option label="小安智能" value="ROLE_XIAOAN" />
+            <el-option label="工厂" value="ROLE_FACTORY" />
             <el-option label="交付方" value="ROLE_DELIVERY" />
             <el-option label="出货方" value="ROLE_SHIPPING" />
             <el-option label="仓库" value="ROLE_WAREHOUSE" />
@@ -181,10 +206,22 @@
             <el-checkbox label="opportunity">商机管理</el-checkbox>
             <el-checkbox label="sales">销售管理</el-checkbox>
             <el-checkbox label="purchase">采购管理</el-checkbox>
-            <el-checkbox label="warehouse">仓库（可见全量销售订单便于发货）</el-checkbox>
-            <el-checkbox label="settlement">客户结算</el-checkbox>
+            <el-checkbox label="settlement">发票管理（销项/进项）</el-checkbox>
+            <el-checkbox label="authorization">平台授权（统计/文档生成/扫码追踪）</el-checkbox>
+            <el-checkbox label="settlement_sales">结算-销售维护（甲方对账单号/结算单号）</el-checkbox>
+            <el-checkbox label="settlement_finance">结算-财务维护（发票号/发票上传/甲方回款）</el-checkbox>
+            <el-checkbox label="purchase_payment_apply">采购-发起付款申请</el-checkbox>
+            <el-checkbox label="purchase_invoice_track">采购-进项发票跟进</el-checkbox>
+            <el-checkbox label="purchase_payment_finance">采购-财务打款与凭证</el-checkbox>
             <el-checkbox label="cooperation">合作管理</el-checkbox>
             <el-checkbox label="user">用户管理</el-checkbox>
+            <el-checkbox label="warehouse">仓库（可见全量销售订单便于发货）</el-checkbox>
+            <el-checkbox label="sales_all_orders">商务-全量订单查看与处理（类似仓库但不限制抬头）</el-checkbox>
+            <el-checkbox label="contract_full_rx_feichuke">合同-热像+飞础科全量（列表/下载，等同 rxkj-sw、rxkj-cw）</el-checkbox>
+            <el-checkbox label="contract_platform_view_all">合同-平台合同全量查看（只读）</el-checkbox>
+            <el-checkbox label="sales_feichuke_contract">销售列表-飞础科合同操作（抬头未维护时的兜底）</el-checkbox>
+            <el-checkbox label="platform_refund">甲方回款状态维护（兼容旧权限）</el-checkbox>
+            <el-checkbox label="purchase_payment_view_all">采购-付款申请全量查看</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
       </el-form>
@@ -205,8 +242,10 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { CopyDocument } from '@element-plus/icons-vue'
 import request from '../../utils/request'
 import draggable from 'vuedraggable'
+import { maskName, maskPhone, copyWithPrivacyLog } from '@/utils/privacy'
 
 interface ColumnConfig {
   label: string
@@ -251,6 +290,7 @@ const allColumns = ref<ColumnConfig[]>([
   { label: 'username', title: '用户名', width: 120, visible: true },
   { label: 'realName', title: '真实姓名', width: 120, visible: true },
   { label: 'phone', title: '手机号码', width: 120, visible: true },
+  { label: 'email', title: '邮箱', width: 180, visible: true },
   { label: 'department', title: '所属部门', width: 150, visible: true },
   { label: 'role', title: '角色', width: 120, visible: true },
   { label: 'companyTitle', title: '所在公司抬头', width: 200, visible: true },
@@ -356,6 +396,7 @@ const userForm = reactive({
   password: '',
   realName: '',
   phone: '',
+  email: '',
   department: '',
   role: 'ROLE_ECOMMERCE',
   companyTitle: '',
@@ -368,6 +409,7 @@ const rules = {
   realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
   phone: [{ required: true, message: '请输入手机号码', trigger: 'blur' }],
+  email: [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }],
   department: [{ required: true, message: '请输入所属部门', trigger: 'blur' }],
   role: [{ required: true, message: '请选择角色', trigger: 'change' }],
   companyTitle: [{ required: true, message: '请选择所在公司抬头', trigger: 'change' }]
@@ -377,6 +419,8 @@ const getRoleLabel = (role: string) => {
   const map: any = {
     'ROLE_ADMIN': '管理员',
     'ROLE_ECOMMERCE': '工业电商',
+    'ROLE_XIAOAN': '小安智能',
+    'ROLE_FACTORY': '工厂',
     'ROLE_DELIVERY': '交付方',
     'ROLE_SHIPPING': '出货方',
     'ROLE_WAREHOUSE': '仓库'
@@ -388,6 +432,8 @@ const getRoleTagType = (role: string) => {
   const map: any = {
     'ROLE_ADMIN': 'danger',
     'ROLE_ECOMMERCE': 'success',
+    'ROLE_XIAOAN': 'primary',
+    'ROLE_FACTORY': 'info',
     'ROLE_DELIVERY': 'warning',
     'ROLE_SHIPPING': 'info',
     'ROLE_WAREHOUSE': ''
@@ -426,6 +472,20 @@ const handleAdd = () => {
     userForm.companyTitle = localStorage.getItem('companyTitle') || ''
   }
   dialogVisible.value = true
+}
+
+const copyUserField = async (row: any, field: string, text: string) => {
+  const value = text != null ? String(text).trim() : ''
+  if (!value) {
+    ElMessage.warning('无内容可复制')
+    return
+  }
+  await copyWithPrivacyLog(value, {
+    targetType: 'USER',
+    targetId: String(row.id),
+    action: 'COPY',
+    field
+  })
 }
 
 const handleEdit = (row: any) => {
@@ -476,8 +536,11 @@ const submitForm = async () => {
         dialogVisible.value = false
         fetchUsers()
       } catch (error: any) {
+        const msg = error?.response?.data?.message
         if (error?.response?.status === 403) {
           ElMessage.error('无权限操作其他公司用户')
+        } else if (msg) {
+          ElMessage.error(msg)
         } else {
           ElMessage.error('保存失败')
         }
@@ -493,6 +556,7 @@ const resetForm = () => {
     password: '',
     realName: '',
     phone: '',
+    email: '',
     department: '',
     role: 'ROLE_ECOMMERCE',
     companyTitle: '',

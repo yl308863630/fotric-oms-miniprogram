@@ -35,18 +35,34 @@
 
 ### 本地开发
 
-#### 后端启动
+**方式一：一键启动脚本（推荐）**
+
+在项目根目录下：
+
+| 脚本 | 说明 |
+|------|------|
+| `start-backend.bat` | 只启动后端（8080），双击或在 CMD 中运行 |
+| `start-frontend.bat` | 只启动前端（3000），双击或在 CMD 中运行 |
+| `start-all.bat` | 同时启动后端和前端（各开一个窗口） |
+
+PowerShell 版本：`start-backend.ps1`、`start-frontend.ps1`、`start-all.ps1`，在项目根目录执行 `.\start-all.ps1` 即可同时启动前后端。
+
+**方式二：命令行手动启动**
+
+后端启动：
 ```bash
 cd oms-backend
 mvn spring-boot:run
 ```
 
-#### 前端启动
+前端启动（新开一个终端）：
 ```bash
 cd oms-frontend
 npm install
 npm run dev
 ```
+
+启动后浏览器访问：http://localhost:3000
 
 ### 服务器部署
 

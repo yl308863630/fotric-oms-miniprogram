@@ -39,9 +39,10 @@ public class DingTalkService {
         message.put("text", text);
         
         // 添加@指定人
-        if (atMobiles != null && !atMobiles.isEmpty()) {
+        List<String> normalizedMobiles = normalizeAtMobiles(atMobiles);
+        if (!normalizedMobiles.isEmpty()) {
             Map<String, Object> at = new HashMap<>();
-            at.put("atMobiles", atMobiles);
+            at.put("atMobiles", normalizedMobiles);
             at.put("isAtAll", false);
             message.put("at", at);
         }
@@ -66,9 +67,10 @@ public class DingTalkService {
         message.put("markdown", markdown);
         
         // 添加@指定人
-        if (atMobiles != null && !atMobiles.isEmpty()) {
+        List<String> normalizedMobiles = normalizeAtMobiles(atMobiles);
+        if (!normalizedMobiles.isEmpty()) {
             Map<String, Object> at = new HashMap<>();
-            at.put("atMobiles", atMobiles);
+            at.put("atMobiles", normalizedMobiles);
             at.put("isAtAll", false);
             message.put("at", at);
         }
@@ -100,15 +102,67 @@ public class DingTalkService {
     }
 
     public void sendLogisticsNotification(String orderNo, String trackingNumber, String status, List<String> atMobiles) {
+        sendLogisticsNotificationDetailed(orderNo, trackingNumber, status, null, null, null, null, null, null, atMobiles);
+    }
+
+    public void sendLogisticsNotificationDetailed(String orderNo,
+                                                  String trackingNumber,
+                                                  String status,
+                                                  String returnTrackingNumber,
+                                                  String businessOwners,
+                                                  String deliverySummary,
+                                                  String requirementSummary,
+                                                  List<LogisticsLineSummary> lineSummaries,
+                                                  List<String> snCodes,
+                                                  List<String> atMobiles) {
         String title = "🚚 物流更新通知";
+        String normalizedOrderNo = normalizeMarkdownValue(orderNo);
+        String normalizedTracking = normalizeMarkdownValue(trackingNumber);
+        String normalizedStatus = normalizeMarkdownValue(status);
+        String normalizedReturnTracking = normalizeMarkdownValue(returnTrackingNumber);
+        String normalizedBusinessOwners = normalizeMarkdownValue(businessOwners);
+        String normalizedDeliverySummary = normalizeMarkdownValue(deliverySummary);
+        String normalizedRequirementSummary = normalizeMarkdownValue(requirementSummary);
+        String lineSummaryMarkdown = buildLogisticsLineSummaryMarkdown(lineSummaries);
+        String snSummary = buildSnSummary(snCodes);
         String text = String.format(
             "## 🚚 物流更新通知\n\n" +
             "**订单号：** %s\n\n" +
             "**物流单号：** %s\n\n" +
             "**物流状态：** %s\n\n" +
+            "**回单物流单号：** %s\n\n" +
+            "**业务员：** %s\n\n" +
+            "**交付信息：** %s\n\n" +
+            "**发货要求：** %s\n\n" +
+            "**商品明细：** %s\n\n" +
+            "**SN编码：** %s\n\n" +
             "---\n" +
             "*来自 OMS 订单系统*",
-            orderNo, trackingNumber, status
+            normalizedOrderNo,
+            normalizedTracking,
+            normalizedStatus,
+            normalizedReturnTracking,
+            normalizedBusinessOwners,
+            normalizedDeliverySummary,
+            normalizedRequirementSummary,
+            lineSummaryMarkdown,
+            snSummary
+        );
+        sendMarkdownMessage(title, text, atMobiles);
+    }
+
+    public void sendReceiptUploadNotification(String orderNo, String receiptStatus, String receiptTime, List<String> atMobiles) {
+        String title = "📄 签收单上传通知";
+        String normalizedStatus = (receiptStatus == null || receiptStatus.isBlank()) ? "签收单已上传" : receiptStatus;
+        String normalizedTime = (receiptTime == null || receiptTime.isBlank()) ? "-" : receiptTime;
+        String text = String.format(
+            "## 📄 签收单上传通知\n\n" +
+            "**订单号：** %s\n\n" +
+            "**签收状态：** %s\n\n" +
+            "**签收时间：** %s\n\n" +
+            "---\n" +
+            "*来自 OMS 订单系统*",
+            orderNo, normalizedStatus, normalizedTime
         );
         sendMarkdownMessage(title, text, atMobiles);
     }
@@ -156,6 +210,95 @@ public class DingTalkService {
         } catch (Exception e) {
             System.err.println("发送钉钉消息失败: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    private List<String> normalizeAtMobiles(List<String> atMobiles) {
+        if (atMobiles == null || atMobiles.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return atMobiles.stream()
+                .map(this::normalizeDingTalkMobile)
+                .filter(mobile -> !mobile.isEmpty())
+                .distinct()
+                .toList();
+    }
+
+    private String normalizeDingTalkMobile(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "";
+        }
+        String digits = raw.replaceAll("\\D", "");
+        if (digits.startsWith("86") && digits.length() > 11) {
+            digits = digits.substring(digits.length() - 11);
+        }
+        return digits.matches("^1\\d{10}$") ? digits : "";
+    }
+
+    private String normalizeMarkdownValue(String value) {
+        String text = value == null ? "" : value.trim();
+        return text.isEmpty() ? "-" : text;
+    }
+
+    private String buildLogisticsLineSummaryMarkdown(List<LogisticsLineSummary> lineSummaries) {
+        if (lineSummaries == null || lineSummaries.isEmpty()) {
+            return "-";
+        }
+        List<String> parts = new ArrayList<>();
+        for (LogisticsLineSummary summary : lineSummaries) {
+            if (summary == null) continue;
+            String model = normalizeMarkdownValue(summary.getModel());
+            String qty = summary.getQuantity() == null ? "-" : String.valueOf(summary.getQuantity());
+            parts.add(model + " x" + qty);
+        }
+        return parts.isEmpty() ? "-" : String.join("；", parts);
+    }
+
+    private String buildSnSummary(List<String> snCodes) {
+        if (snCodes == null || snCodes.isEmpty()) {
+            return "-";
+        }
+        List<String> normalized = snCodes.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(text -> !text.isEmpty())
+                .distinct()
+                .toList();
+        if (normalized.isEmpty()) {
+            return "-";
+        }
+        if (normalized.size() <= 8) {
+            return String.join("，", normalized);
+        }
+        return String.join("，", normalized.subList(0, 8)) + String.format(" 等共 %d 个", normalized.size());
+    }
+
+    public static class LogisticsLineSummary {
+        private String model;
+        private Integer quantity;
+
+        public LogisticsLineSummary() {
+        }
+
+        public LogisticsLineSummary(String model, Integer quantity) {
+            this.model = model;
+            this.quantity = quantity;
+        }
+
+        public String getModel() {
+            return model;
+        }
+
+        public void setModel(String model) {
+            this.model = model;
+        }
+
+        public Integer getQuantity() {
+            return quantity;
+        }
+
+        public void setQuantity(Integer quantity) {
+            this.quantity = quantity;
         }
     }
 

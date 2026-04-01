@@ -1,5 +1,6 @@
 package com.oms.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -7,6 +8,7 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "partner_info")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class PartnerInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

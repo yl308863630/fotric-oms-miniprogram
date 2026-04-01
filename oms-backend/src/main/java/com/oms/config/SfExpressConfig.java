@@ -14,11 +14,11 @@ import org.springframework.stereotype.Component;
 public class SfExpressConfig {
 
     /** 顾客编码（partnerID） */
-    private String partnerId = "RXKJ6ZUCPGJ";
+    private String partnerId = "FCKZH1AEF3YE";
     /** 沙箱校验码 */
-    private String sandboxCheckword = "faUcODvqGSx8vfDETsyKRTsDuosbQ4Ca";
+    private String sandboxCheckword = "VBYxDKKlufvu7mui7ONaVxcINnLFcf2m";
     /** 生产校验码 */
-    private String prodCheckword = "pCySNd2TiT0P9lsSwBnGsHFtqao5XaOL";
+    private String prodCheckword = "8lFzNnLpeDNftGCfauWq2D3ilTCxzh0i";
 
     /** 生产环境地址（速运类） */
     private String prodUrl = "https://bspgw.sf-express.com/std/service";
@@ -28,10 +28,7 @@ public class SfExpressConfig {
     private String sandboxUrl = "https://sfapi-sbox.sf-express.com/std/service";
 
     /** true=生产环境，false=沙箱 */
-    private boolean useProd = true;
-
-    /** 月结卡号（用于API调用权限验证） */
-    private String monthlyCard = "0211391807";
+    private boolean useProd = false;
 
     public String getBaseUrl() {
         return useProd ? prodUrl : sandboxUrl;

@@ -63,3 +63,4 @@ mvnw.cmd
 
 # Configuration files (contains secrets)
 oms-backend/src/main/resources/application.yml
+**/application-prod.yml

@@ -65,6 +65,8 @@ public class Opportunity {
 
     private String stage; // 业务阶段
 
+    private String deliveryPeriod; // 交货期（用于报价单，如 4-6周）
+
     private LocalDateTime followUpTime; // 跟进时间
 
     @Column(columnDefinition = "TEXT")

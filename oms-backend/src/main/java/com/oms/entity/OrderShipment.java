@@ -51,6 +51,14 @@ public class OrderShipment {
     @Column(name = "tracking_number")
     private String trackingNumber;
 
+    /** 回单物流单号（与 sales_orders.return_receipt_tracking_number 同步） */
+    @Column(name = "return_receipt_tracking_number")
+    private String returnReceiptTrackingNumber;
+
+    /** 回单收件人手机（查轨迹用后四位） */
+    @Column(name = "return_receipt_receiver_phone")
+    private String returnReceiptReceiverPhone;
+
     @Column(name = "vehicle_plate")
     private String vehiclePlate;
 

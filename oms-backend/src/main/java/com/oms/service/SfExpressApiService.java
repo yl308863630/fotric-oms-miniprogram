@@ -15,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Base64;
 import java.util.*;
 
 /**
@@ -34,15 +35,31 @@ public class SfExpressApiService {
         this.objectMapper = objectMapper;
     }
 
-    /** 顺丰丰桥要求：msgData + timestamp + checkword，MD5(UTF-8) 后转 Base64 字符串 */
-    public String sign(String msgData, long timestamp) {
+    /** 顺丰丰桥常用签名：Base64(MD5(msgData + timestamp + checkWord)) */
+    public String signBase64(String msgData, long timestampMs) {
         try {
-            String raw = msgData + timestamp + config.getCheckword();
+            String raw = msgData + timestampMs + config.getCheckword();
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] digest = md.digest(raw.getBytes(StandardCharsets.UTF_8));
-            // Base64编码（与文档一致：MD5后转换为Base64字符串）
-            String base64 = Base64.getEncoder().encodeToString(digest);
-            return base64;
+            return Base64.getEncoder().encodeToString(digest);
+        } catch (Exception e) {
+            throw new RuntimeException("顺丰签名失败", e);
+        }
+    }
+
+    /** 历史兼容：32位大写 HEX（部分旧实现仍使用） */
+    public String signHexUpper(String msgData, long timestampMs) {
+        try {
+            String raw = msgData + timestampMs + config.getCheckword();
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] digest = md.digest(raw.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(32);
+            for (byte b : digest) {
+                String h = Integer.toHexString(0xff & b);
+                if (h.length() == 1) hex.append('0');
+                hex.append(h);
+            }
+            return hex.toString().toUpperCase();
         } catch (Exception e) {
             throw new RuntimeException("顺丰签名失败", e);
         }
@@ -52,8 +69,18 @@ public class SfExpressApiService {
     public JsonNode post(String serviceCode, Map<String, Object> msgDataMap) throws Exception {
         String msgData = objectMapper.writeValueAsString(msgDataMap);
         long timestamp = System.currentTimeMillis();
-        String msgDigest = sign(msgData, timestamp);
+        String url = config.getBaseUrl();
 
+        // 优先走官方常用 Base64 签名；若返回 A1006（数字签名无效）再回退 HEX 签名，便于平滑兼容旧环境
+        JsonNode first = doPost(serviceCode, msgData, timestamp, signBase64(msgData, timestamp), url);
+        if (!"A1006".equals(first.path("apiResultCode").asText(""))) {
+            return first;
+        }
+        log.warn("顺丰API[{}] 返回A1006，尝试回退HEX签名重试一次", serviceCode);
+        return doPost(serviceCode, msgData, timestamp, signHexUpper(msgData, timestamp), url);
+    }
+
+    private JsonNode doPost(String serviceCode, String msgData, long timestamp, String msgDigest, String url) throws Exception {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("partnerID", config.getPartnerId());
         form.add("requestID", UUID.randomUUID().toString().replace("-", ""));
@@ -62,7 +89,6 @@ public class SfExpressApiService {
         form.add("msgData", msgData);
         form.add("msgDigest", msgDigest);
 
-        String url = config.getBaseUrl();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(form, headers);
@@ -84,15 +110,13 @@ public class SfExpressApiService {
                 phoneSuffix = digits.length() >= 4 ? digits.substring(digits.length() - 4)
                     : String.format("%4s", digits).replace(' ', '0');
             }
-            // 尝试不同的查询参数，trackingType=1=速运类，methodType=2=查询所有（包括历史和最新）
+            // 与官方示例一致：language=zh-CN, trackingType=1, methodType=1；批量时 checkPhoneNo 为 "0001,0002" 形式
             Map<String, Object> msgData = new HashMap<>();
             msgData.put("language", "zh-CN");
             msgData.put("trackingType", "1");
             msgData.put("trackingNumber", Collections.singletonList(trackingNumber));
-            msgData.put("methodType", "2");
+            msgData.put("methodType", "1");
             msgData.put("checkPhoneNo", phoneSuffix);
-            // 添加月结卡号（解决 20028 错误：月结卡号不匹配）
-            msgData.put("monthlyCard", config.getMonthlyCard());
 
             JsonNode root = post("EXP_RECE_SEARCH_ROUTES", msgData);
             String code = root.path("apiResultCode").asText("");
@@ -124,7 +148,10 @@ public class SfExpressApiService {
                             LogisticsTrace.TraceItem item = new LogisticsTrace.TraceItem();
                             item.setTime(route.path("acceptTime").asText(""));
                             item.setDesc(route.path("remark").asText(""));
-                            item.setStatus(mapOpCodeToStatus(route.path("opCode").asText("")));
+                            item.setStatus(mapOpCodeToStatus(
+                                    route.path("opCode").asText(""),
+                                    route.path("remark").asText("")
+                            ));
                             traces.add(item);
                         }
                     }
@@ -176,8 +203,19 @@ public class SfExpressApiService {
         return out;
     }
 
-    private static String mapOpCodeToStatus(String opCode) {
+    private static String mapOpCodeToStatus(String opCode, String remark) {
         if (opCode == null) return "在途";
+        String desc = remark == null ? "" : remark.trim();
+        if (desc.contains("已签收") || desc.contains("本人签收")
+                || desc.contains("已由本人签收")
+                || desc.contains("派送至本人")
+                || desc.contains("已派送至本人")
+                || desc.contains("投递至本人")
+                || desc.contains("已投递至本人")
+                || desc.contains("已妥投")
+                || desc.contains("已代收")) {
+            return "已签收";
+        }
         switch (opCode) {
             case "50": return "已签收";
             case "54": return "已揽收";

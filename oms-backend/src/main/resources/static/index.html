@@ -2,11 +2,21 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="/t-logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>合作商集成平台复刻版</title>
-    <script type="module" crossorigin src="/assets/index-BHwcQPHk.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CXv6bTwN.css">
+    <title>飞础科(FOTRIC)OMS 订单管理系统</title>
+    <script>
+      (function () {
+        var isAuthorizationVerify =
+          window.location.pathname.indexOf('/authorization/verify') === 0 ||
+          window.location.hash.indexOf('#/authorization/verify') === 0
+        if (isAuthorizationVerify) {
+          document.title = '飞础科(FOTRIC)授权验真系统'
+        }
+      })()
+    </script>
+    <script type="module" crossorigin src="/assets/index-BWSHhoCk.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DdC3v0di.css">
   </head>
   <body>
     <div id="app"></div>

@@ -11,8 +11,8 @@
                 <div class="todo-card-inner">
                   <el-icon class="todo-icon"><Document /></el-icon>
                   <div class="todo-main">{{ todos.pendingAccept ?? 0 }}</div>
-                  <div class="todo-label">待接单</div>
-                  <div class="todo-sub">即将逾期 {{ todos.pendingAcceptApproaching ?? 0 }} · 已逾期 {{ todos.pendingAcceptOverdue ?? 0 }}</div>
+                  <div class="todo-label">待指派主单</div>
+                  <div class="todo-sub">按主单口径统计，点击进入采购管理-销售订单指派处理 · 即将逾期 {{ todos.pendingAcceptApproaching ?? 0 }} · 已逾期 {{ todos.pendingAcceptOverdue ?? 0 }}</div>
                 </div>
               </el-card>
             </el-col>
@@ -22,12 +22,42 @@
                   <el-icon class="todo-icon"><CircleCheck /></el-icon>
                   <div class="todo-main">{{ todos.pendingConfirmOrder ?? 0 }}</div>
                   <div class="todo-label">待确认订单</div>
-                  <div class="todo-sub">被指派方确认后进入合同盖章</div>
+                  <div class="todo-sub">历史待确认（新流程已跳过此步骤）</div>
                 </div>
               </el-card>
             </el-col>
             <el-col :xs="12" :sm="8" :md="6">
-              <el-card shadow="hover" class="todo-card" @click="goTo('/purchase', { tab: 'purchase', status: 'confirmed' })">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/cooperation/contract', { status: '待签署' })">
+                <div class="todo-card-inner">
+                  <el-icon class="todo-icon"><Document /></el-icon>
+                  <div class="todo-main">{{ todos.pendingContractSign ?? 0 }}</div>
+                  <div class="todo-label">合同待签署</div>
+                  <div class="todo-sub">当前公司为乙方且尚未签署，点击进入合同管理</div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :xs="12" :sm="8" :md="6">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/sales', { erpEntryStatus: '待系统录单' })">
+                <div class="todo-card-inner">
+                  <el-icon class="todo-icon"><EditPen /></el-icon>
+                  <div class="todo-main">{{ todos.pendingFeichukeErpEntry ?? 0 }}</div>
+                  <div class="todo-label">飞础科待系统录单</div>
+                  <div class="todo-sub">点击进入销售列表处理商务ERP录单</div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :xs="12" :sm="8" :md="6">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/purchase', { tab: 'purchase', erpEntryStatus: '待系统录单' })">
+                <div class="todo-card-inner">
+                  <el-icon class="todo-icon"><EditPen /></el-icon>
+                  <div class="todo-main">{{ todos.pendingRexiangErpEntry ?? 0 }}</div>
+                  <div class="todo-label">热像待系统录单</div>
+                  <div class="todo-sub">点击进入采购列表处理商务ERP录单</div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :xs="12" :sm="8" :md="6">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/sales', { status: '待发货' })">
                 <div class="todo-card-inner">
                   <el-icon class="todo-icon"><Van /></el-icon>
                   <div class="todo-main">{{ todos.pendingShip ?? 0 }}</div>
@@ -37,22 +67,42 @@
               </el-card>
             </el-col>
             <el-col :xs="12" :sm="8" :md="6">
-              <el-card shadow="hover" class="todo-card" @click="goTo('/sales', { status: '已发货', filter: 'receipt' })">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/sales', { receiptFilter: 'pending_upload' })">
                 <div class="todo-card-inner">
                   <el-icon class="todo-icon"><Box /></el-icon>
                   <div class="todo-main">{{ todos.pendingDelivery ?? 0 }}</div>
-                  <div class="todo-label">待妥投</div>
+                  <div class="todo-label">需签收单（待上传）</div>
                   <div class="todo-sub">即将逾期 {{ todos.pendingDeliveryApproaching ?? 0 }} · 已逾期 {{ todos.pendingDeliveryOverdue ?? 0 }}</div>
                 </div>
               </el-card>
             </el-col>
             <el-col :xs="12" :sm="8" :md="6">
-              <el-card shadow="hover" class="todo-card" @click="goTo('/sales', { status: '已发货', filter: 'receipt' })">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/sales', { receiptFilter: 'waiting_sign' })">
                 <div class="todo-card-inner">
                   <el-icon class="todo-icon"><EditPen /></el-icon>
                   <div class="todo-main">{{ todos.pendingReceipt ?? 0 }}</div>
-                  <div class="todo-label">待签收</div>
+                  <div class="todo-label">已发货等待签收</div>
                   <div class="todo-sub">即将逾期 {{ todos.pendingReceiptApproaching ?? 0 }} · 已逾期 {{ todos.pendingReceiptOverdue ?? 0 }}</div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :xs="12" :sm="8" :md="6">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/sales', { receiptFilter: 'self_vehicle_pending_receipt' })">
+                <div class="todo-card-inner">
+                  <el-icon class="todo-icon"><Van /></el-icon>
+                  <div class="todo-main">{{ todos.pendingSelfVehicleReceipt ?? 0 }}</div>
+                  <div class="todo-label">自主车辆待签收单</div>
+                  <div class="todo-sub">自主车辆已发货但尚未上传签收单</div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :xs="12" :sm="8" :md="6">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/sales', { receiptFilter: 'completed' })">
+                <div class="todo-card-inner">
+                  <el-icon class="todo-icon"><Finished /></el-icon>
+                  <div class="todo-main">{{ todos.completedDelivery ?? 0 }}</div>
+                  <div class="todo-label">妥投结束</div>
+                  <div class="todo-sub">已上传签收单且已标记妥投</div>
                 </div>
               </el-card>
             </el-col>
@@ -62,7 +112,7 @@
           <div class="section-title">其他待办</div>
           <el-row :gutter="16" class="card-row">
             <el-col :xs="12" :sm="8" :md="6">
-              <el-card shadow="hover" class="todo-card small" @click="goTo('/opportunity')">
+              <el-card shadow="hover" class="todo-card small" @click="goTo('/opportunity', { stage: 'after-sale', dashboardCard: 'pendingAfterSales' })">
                 <div class="todo-card-inner">
                   <el-icon class="todo-icon"><ChatDotRound /></el-icon>
                   <div class="todo-main">{{ todos.pendingAfterSales ?? 0 }}</div>
@@ -72,7 +122,7 @@
               </el-card>
             </el-col>
             <el-col :xs="12" :sm="8" :md="6">
-              <el-card shadow="hover" class="todo-card small" @click="goTo('/sales')">
+              <el-card shadow="hover" class="todo-card small" @click="goTo('/sales', { dashboardCard: 'pendingWorkOrder' })">
                 <div class="todo-card-inner">
                   <el-icon class="todo-icon"><Tickets /></el-icon>
                   <div class="todo-main">{{ todos.pendingWorkOrder ?? 0 }}</div>
@@ -82,7 +132,7 @@
               </el-card>
             </el-col>
             <el-col :xs="12" :sm="8" :md="6">
-              <el-card shadow="hover" class="todo-card small" @click="goTo('/sales')">
+              <el-card shadow="hover" class="todo-card small" @click="goTo('/sales', { dashboardCard: 'pendingClaim' })">
                 <div class="todo-card-inner">
                   <el-icon class="todo-icon"><Warning /></el-icon>
                   <div class="todo-main">{{ todos.pendingClaim ?? 0 }}</div>
@@ -92,7 +142,7 @@
               </el-card>
             </el-col>
             <el-col :xs="12" :sm="8" :md="6">
-              <el-card shadow="hover" class="todo-card small" @click="goTo('/sales')">
+              <el-card shadow="hover" class="todo-card small" @click="goTo('/sales', { dashboardCard: 'rejectedReceipt' })">
                 <div class="todo-card-inner">
                   <el-icon class="todo-icon"><CircleClose /></el-icon>
                   <div class="todo-main">{{ todos.rejectedReceipt ?? 0 }}</div>
@@ -110,7 +160,7 @@
               </el-card>
             </el-col>
             <el-col :xs="12" :sm="8" :md="6">
-              <el-card shadow="hover" class="todo-card small" @click="goTo('/opportunity')">
+              <el-card shadow="hover" class="todo-card small" @click="goTo('/opportunity', { category: 'reported', dashboardCard: 'pendingFiling' })">
                 <div class="todo-card-inner">
                   <el-icon class="todo-icon"><Notebook /></el-icon>
                   <div class="todo-main">{{ todos.pendingFiling ?? 0 }}</div>
@@ -124,7 +174,7 @@
           <div class="section-title">客户结算</div>
           <el-row :gutter="16" class="card-row">
             <el-col :xs="12" :sm="12" :md="6">
-              <el-card shadow="hover" class="todo-card" @click="goTo('/sales', { platformRefundStatus: '未回款,部分回款' })">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/sales', { platformRefundStatus: '未回款,部分回款', excludeStatuses: '待指派,已退回' })">
                 <div class="todo-card-inner">
                   <el-icon class="todo-icon"><Money /></el-icon>
                   <div class="todo-main">{{ todos.pendingCustomerPayment ?? 0 }}</div>
@@ -134,12 +184,32 @@
               </el-card>
             </el-col>
             <el-col :xs="12" :sm="12" :md="6">
-              <el-card shadow="hover" class="todo-card" @click="goTo('/settlement/invoice')">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/sales', { expectedRefundOverdue: '1', excludeStatuses: '待指派,已退回' })">
+                <div class="todo-card-inner">
+                  <el-icon class="todo-icon"><Warning /></el-icon>
+                  <div class="todo-main">{{ todos.pendingCustomerPaymentOverdue ?? 0 }}</div>
+                  <div class="todo-label">预计回款超期</div>
+                  <div class="todo-sub">仅统计未回款/部分回款且未结算订单，点击查看超期明细</div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :xs="12" :sm="12" :md="6">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/sales', { status: '已开票待结算' })">
                 <div class="todo-card-inner">
                   <el-icon class="todo-icon"><Stamp /></el-icon>
-                  <div class="todo-main">{{ todos.pendingInvoiceConfirm ?? 0 }}</div>
-                  <div class="todo-label">待确认开票</div>
-                  <div class="todo-sub">即将逾期 {{ todos.pendingInvoiceConfirmApproaching ?? 0 }} · 已逾期 {{ todos.pendingInvoiceConfirmOverdue ?? 0 }}</div>
+                  <div class="todo-main">{{ todos.invoicedPendingSettlement ?? 0 }}</div>
+                  <div class="todo-label">已开票待结算</div>
+                  <div class="todo-sub">已维护发票号码，待客户回款完成结算 · 即将逾期 {{ todos.invoicedPendingSettlementApproaching ?? 0 }} · 已逾期 {{ todos.invoicedPendingSettlementOverdue ?? 0 }}</div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :xs="12" :sm="12" :md="6">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/sales', { status: '已对账未开票' })">
+                <div class="todo-card-inner">
+                  <el-icon class="todo-icon"><Document /></el-icon>
+                  <div class="todo-main">{{ todos.reconciledNeedInvoice ?? 0 }}</div>
+                  <div class="todo-label">已对账未开票</div>
+                  <div class="todo-sub">已填甲方对账单号，待财务维护发票 · 即将逾期 {{ todos.reconciledNeedInvoiceApproaching ?? 0 }} · 已逾期 {{ todos.reconciledNeedInvoiceOverdue ?? 0 }}</div>
                 </div>
               </el-card>
             </el-col>
@@ -147,7 +217,7 @@
           <div class="section-title">合作商结算</div>
           <el-row :gutter="16" class="card-row">
             <el-col :xs="12" :sm="12" :md="6">
-              <el-card shadow="hover" class="todo-card" @click="goTo('/settlement/invoice')">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/invoice/input', { status: '已收票' })">
                 <div class="todo-card-inner">
                   <el-icon class="todo-icon"><DocumentCopy /></el-icon>
                   <div class="todo-main">{{ todos.pendingInboundInvoice ?? 0 }}</div>
@@ -156,11 +226,75 @@
               </el-card>
             </el-col>
             <el-col :xs="12" :sm="12" :md="6">
-              <el-card shadow="hover" class="todo-card" @click="goTo('/settlement/invoice')">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/invoice/input', { dashboardCard: 'pendingInboundReturn' })">
                 <div class="todo-card-inner">
                   <el-icon class="todo-icon"><RefreshLeft /></el-icon>
                   <div class="todo-main">{{ todos.pendingInboundReturn ?? 0 }}</div>
                   <div class="todo-label">待处理进项退票</div>
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
+
+          <div class="section-title">新单据中心</div>
+          <el-row :gutter="16" class="card-row">
+            <el-col :xs="12" :sm="8" :md="6">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/sales/reconciliation', { status: '已对账' })">
+                <div class="todo-card-inner">
+                  <el-icon class="todo-icon"><Document /></el-icon>
+                  <div class="todo-main">{{ todos.pendingSalesReconciliation ?? 0 }}</div>
+                  <div class="todo-label">销售对账待开票</div>
+                  <div class="todo-sub">已生成销售对账单，待统一开销项发票</div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :xs="12" :sm="8" :md="6">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/invoice/output', { status: '已开票' })">
+                <div class="todo-card-inner">
+                  <el-icon class="todo-icon"><Stamp /></el-icon>
+                  <div class="todo-main">{{ todos.pendingSalesOutputInvoice ?? 0 }}</div>
+                  <div class="todo-label">销项发票待结算</div>
+                  <div class="todo-sub">已开票，待进入销售结算与回款跟踪</div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :xs="12" :sm="8" :md="6">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/sales/settlement', { status: '待回款,部分回款' })">
+                <div class="todo-card-inner">
+                  <el-icon class="todo-icon"><Money /></el-icon>
+                  <div class="todo-main">{{ todos.pendingSalesSettlement ?? 0 }}</div>
+                  <div class="todo-label">销售结算待回款</div>
+                  <div class="todo-sub">待回款或部分回款的销售结算单</div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :xs="12" :sm="8" :md="6">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/purchase/reconciliation', { status: '已对账' })">
+                <div class="todo-card-inner">
+                  <el-icon class="todo-icon"><DocumentCopy /></el-icon>
+                  <div class="todo-main">{{ todos.pendingPurchaseReconciliation ?? 0 }}</div>
+                  <div class="todo-label">采购对账待收票</div>
+                  <div class="todo-sub">已生成采购对账单，待统一挂进项发票</div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :xs="12" :sm="8" :md="6">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/invoice/input', { status: '已收票' })">
+                <div class="todo-card-inner">
+                  <el-icon class="todo-icon"><Tickets /></el-icon>
+                  <div class="todo-main">{{ todos.pendingPurchaseInputInvoice ?? 0 }}</div>
+                  <div class="todo-label">进项发票待付款</div>
+                  <div class="todo-sub">已收票，待进入采购结算与付款跟踪</div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :xs="12" :sm="8" :md="6">
+              <el-card shadow="hover" class="todo-card" @click="goTo('/purchase/settlement', { status: '待付款,部分付款' })">
+                <div class="todo-card-inner">
+                  <el-icon class="todo-icon"><RefreshLeft /></el-icon>
+                  <div class="todo-main">{{ todos.pendingPurchaseSettlement ?? 0 }}</div>
+                  <div class="todo-label">采购结算待付款</div>
+                  <div class="todo-sub">待付款或部分付款的采购结算单</div>
                 </div>
               </el-card>
             </el-col>
@@ -280,8 +414,50 @@ const chartOption = computed(() => ({
   ]
 }))
 
+function buildRouteQuery(path: string, query?: Record<string, string>) {
+  const q = query ?? {}
+  if (path === '/sales') {
+    const allowed = new Set([
+      'platformOrderNo',
+      'omsOrderNo',
+      'status',
+      'excludeStatuses',
+      'erpEntryStatus',
+      'platformRefundStatus',
+      'expectedRefundOverdue',
+      'ecommerceSalesName',
+      'offlineSales',
+      'needReceiptSlip',
+      'receiptFilter',
+      'dashboardCard'
+    ])
+    return Object.fromEntries(Object.entries(q).filter(([key, value]) => allowed.has(key) && String(value || '').trim()))
+  }
+  if (path === '/purchase') {
+    const allowed = new Set(['tab', 'status', 'erpEntryStatus', 'orderId'])
+    return Object.fromEntries(Object.entries(q).filter(([key, value]) => allowed.has(key) && String(value || '').trim()))
+  }
+  if (path === '/sales/reconciliation' || path === '/sales/settlement') {
+    const allowed = new Set(['billNo', 'platformName', 'status'])
+    return Object.fromEntries(Object.entries(q).filter(([key, value]) => allowed.has(key) && String(value || '').trim()))
+  }
+  if (path === '/purchase/reconciliation' || path === '/purchase/settlement') {
+    const allowed = new Set(['billNo', 'supplier', 'status'])
+    return Object.fromEntries(Object.entries(q).filter(([key, value]) => allowed.has(key) && String(value || '').trim()))
+  }
+  if (path === '/invoice/output') {
+    const allowed = new Set(['billNo', 'platformName', 'status'])
+    return Object.fromEntries(Object.entries(q).filter(([key, value]) => allowed.has(key) && String(value || '').trim()))
+  }
+  if (path === '/invoice/input') {
+    const allowed = new Set(['billNo', 'supplier', 'status', 'dashboardCard'])
+    return Object.fromEntries(Object.entries(q).filter(([key, value]) => allowed.has(key) && String(value || '').trim()))
+  }
+  return q
+}
+
 function goTo(path: string, query?: Record<string, string>) {
-  router.push({ path, query })
+  router.push({ path, query: buildRouteQuery(path, query) })
 }
 
 const fetchStats = async () => {
@@ -372,4 +548,13 @@ watch(activeTab, (name) => {
 .stat-mini { min-width: 100px; }
 .stat-mini-label { display: block; font-size: 12px; color: #909399; }
 .stat-mini-value { font-size: 20px; font-weight: bold; }
+@media (max-width: 768px) {
+  .dashboard .card-row .el-col {
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+  .todo-card {
+    min-height: 44px;
+  }
+}
 </style>

@@ -27,16 +27,29 @@ request.interceptors.response.use(
     return response.data
   },
   error => {
-    console.error('Request Error:', error)
-    if (error.response && error.response.status === 403) {
-      // 检查当前路径，如果是/product或/sales，不跳转到登录页面
-      const currentPath = window.location.pathname
-      if (currentPath !== '/product' && currentPath !== '/sales') {
-        localStorage.removeItem('token')
-        window.location.href = '/login'
-      }
+    const skipMsg = (error.config as any)?.skipErrorMsg
+    const skipLog = (error.config as any)?.skipErrorLog || skipMsg
+    if (!skipLog) {
+      console.error('Request Error:', error)
     }
-    ElMessage.error(error.message || '网络错误')
+    const status = error.response?.status
+    // 仅 401 视为登录态失效；403 多为业务权限不足，不应清空 token 导致反复登录
+    const isAuthError = status === 401
+    if (isAuthError) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('username')
+      localStorage.removeItem('companyTitle')
+      window.location.href = '/login'
+    }
+    // 若请求配置了 skipErrorMsg，则不弹出全局错误（如仅用于展示的 partner-info/by-username）
+    if (!skipMsg) {
+      const responseData = error.response?.data
+      const backendMessage =
+        (responseData && typeof responseData === 'object' && 'message' in responseData && (responseData as any).message)
+          ? String((responseData as any).message)
+          : (typeof responseData === 'string' ? responseData : '')
+      ElMessage.error(backendMessage || error.message || '网络错误')
+    }
     return Promise.reject(error)
   }
 )

@@ -29,6 +29,21 @@ public class Contract {
     @Column(name = "sales_order_id")
     private Long salesOrderId;
 
+    @Column(name = "master_id")
+    private Long masterId;
+
+    @Column(name = "allocation_id")
+    private Long allocationId;
+
+    @Column(name = "contract_scope")
+    private String contractScope;
+
+    @Column(name = "merge_selection_key")
+    private String mergeSelectionKey;
+
+    @Column(name = "merged_sales_order_ids", columnDefinition = "TEXT")
+    private String mergedSalesOrderIds;
+
     @Column(name = "sales_id")
     private Long salesId;
 

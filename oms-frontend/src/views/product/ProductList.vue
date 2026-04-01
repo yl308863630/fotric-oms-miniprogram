@@ -1,5 +1,5 @@
 <template>
-  <div class="product-list-container">
+  <div class="product-list-container mobile-list-layout">
     <!-- 搜索筛选区 -->
     <el-card class="filter-card">
       <el-form :inline="true" :model="filterForm" class="demo-form-inline">
@@ -87,6 +87,7 @@
         </el-popover>
       </div>
 
+      <div class="table-wrapper">
       <el-table :data="tableData" border style="width: 100%">
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="操作" width="150" fixed="left" align="center">
@@ -122,6 +123,7 @@
         <el-table-column v-if="orderedColumns.find(c => c.label === 'model')?.visible" prop="model" label="型号" width="120" />
         <el-table-column v-if="orderedColumns.find(c => c.label === 'specs')?.visible" prop="specs" label="规格" width="120" />
         <el-table-column v-if="orderedColumns.find(c => c.label === 'productConfig')?.visible" prop="productConfig" label="产品配置" width="150" show-overflow-tooltip />
+        <el-table-column v-if="orderedColumns.find(c => c.label === 'deliveryPeriod')?.visible" prop="deliveryPeriod" label="交期" width="120" />
         <el-table-column v-if="orderedColumns.find(c => c.label === 'warrantyPeriod')?.visible" prop="warrantyPeriod" label="产品保修期" width="120" />
         <el-table-column v-if="orderedColumns.find(c => c.label === 'unit')?.visible" prop="unit" label="单位" width="80" align="center" />
         <el-table-column v-if="orderedColumns.find(c => c.label === 'price')?.visible" prop="price" label="销售价" width="120" align="right">
@@ -173,6 +175,7 @@
           </template>
         </el-table-column>
       </el-table>
+      </div>
 
       <div class="pagination-container">
         <el-pagination
@@ -233,6 +236,11 @@
           <el-col :span="12">
             <el-form-item label="产品配置">
               <el-input v-model="productForm.productConfig" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="交期">
+              <el-input v-model="productForm.deliveryPeriod" placeholder="例如：4-6周" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -391,7 +399,7 @@ const dialogVisible = ref(false)
 const importVisible = ref(false)
 const dialogType = ref<'add' | 'edit' | 'view'>('add') // 类型：新增、编辑、查看
 
-// 商品表单
+// 商品表单（新建时默认上架）
 const productForm = ref({
   id: null,
   name: '',
@@ -402,6 +410,7 @@ const productForm = ref({
   model: '',
   specs: '',
   productConfig: '标准配置',
+  deliveryPeriod: '',
   warrantyPeriod: '',
   unit: '',
   category: '',
@@ -409,7 +418,8 @@ const productForm = ref({
   stock: 0,
   image: '',
   remark: '',
-  competitorLink: ''
+  competitorLink: '',
+  isActive: true
 })
 
 // 上传相关
@@ -438,6 +448,7 @@ const allColumns = ref<ColumnConfig[]>([
   { label: 'model', title: '型号', width: 120, visible: true },
   { label: 'specs', title: '规格', width: 120, visible: true },
   { label: 'productConfig', title: '产品配置', minWidth: 150, visible: true },
+  { label: 'deliveryPeriod', title: '交期', width: 120, visible: true },
   { label: 'warrantyPeriod', title: '产品保修期', width: 120, visible: true },
   { label: 'unit', title: '单位', width: 80, visible: true },
   { label: 'price', title: '销售价', width: 120, visible: true },
@@ -552,7 +563,7 @@ const fetchProducts = async () => {
       page: currentPage.value - 1,
       size: pageSize.value
     })
-    const response = await request.get('/products', {
+    const response: any = await request.get('/products', {
       params: {
         ...filterForm,
         page: currentPage.value - 1,
@@ -650,7 +661,7 @@ const handleDelete = async (row: any) => {
   }
 }
 
-// 重置表单
+// 重置表单（新建时默认上架）
 const resetForm = () => {
   productForm.value = {
     id: null,
@@ -662,6 +673,7 @@ const resetForm = () => {
     model: '',
     specs: '',
     productConfig: '标准配置',
+    deliveryPeriod: '',
     warrantyPeriod: '',
     unit: '',
     category: '',
@@ -669,7 +681,8 @@ const resetForm = () => {
     stock: 0,
     image: '',
     remark: '',
-    competitorLink: ''
+    competitorLink: '',
+    isActive: true
   }
 }
 
@@ -757,7 +770,7 @@ const handleCustomUpload = async (options: any) => {
     const formData = new FormData()
     formData.append('file', file)
     
-    const response = await request.post('/files/upload', formData, {
+    const response: any = await request.post('/files/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       },

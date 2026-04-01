@@ -1,5 +1,5 @@
 <template>
-  <div class="invoice-list">
+  <div class="invoice-list mobile-list-layout">
     <el-card class="filter-card">
       <el-form :inline="true" :model="filterForm">
         <el-form-item label="对账日期">
@@ -33,7 +33,7 @@
 
     <el-card>
       <div class="table-ops">
-        <el-button type="primary">发起对账</el-button>
+        <el-button type="primary" @click="openCreateInvoiceDialog">发起对账</el-button>
         <el-button type="success" plain>批量导出</el-button>
         <el-button type="warning" plain>批量打印</el-button>
         <el-popover placement="bottom" width="500" trigger="click">
@@ -83,6 +83,7 @@
           </div>
         </el-popover>
       </div>
+      <div class="table-wrapper">
       <el-table :data="tableData" style="width: 100%" border stripe size="small">
         <el-table-column type="selection" width="55" />
         <el-table-column label="操作" width="120" fixed="right">
@@ -118,6 +119,7 @@
           </el-table-column>
         </template>
       </el-table>
+      </div>
       <div class="pagination">
         <el-pagination
           background
@@ -152,7 +154,7 @@
 
         <div class="summary-bar">
           <div class="bill-info">
-            <span class="label">平台申请号：</span>
+            <span class="label">甲方申请号：</span>
             <span class="value">{{ currentBill.platformApplyNo || '-' }}</span>
             <el-tag :type="getStatusType(currentBill.status)" size="small" class="status-tag">{{ currentBill.status }}</el-tag>
             <span class="label ml-20">项目名称：</span>
@@ -160,6 +162,15 @@
           </div>
           <div class="money-info">
             <span class="item">开票总额：<span class="price">¥{{ currentBill.amount }}</span></span>
+            <template v-if="currentBill.status !== 'INVOICED' && currentBill.status !== 'SETTLED'">
+              <el-select v-model="detailStatusNext" placeholder="推进状态" size="small" class="ml-20" style="width: 120px">
+                <el-option label="待对账 PENDING" value="PENDING" />
+                <el-option label="已对账 CONFIRMED" value="CONFIRMED" />
+                <el-option label="待开票 APPLIED" value="APPLIED" />
+                <el-option label="已开票 INVOICED" value="INVOICED" />
+              </el-select>
+              <el-button type="primary" size="small" class="ml-8" :loading="detailStatusUpdating" @click="updateInvoiceStatusInDetail">更新状态</el-button>
+            </template>
           </div>
         </div>
 
@@ -218,13 +229,47 @@
         </el-tabs>
       </div>
     </el-dialog>
+
+    <!-- 发起对账：选择销售订单生成对账单 -->
+    <el-dialog v-model="createInvoiceDialogVisible" title="发起对账" width="800px" @closed="resetCreateInvoiceForm">
+      <el-form :model="createInvoiceForm" label-width="100px">
+        <el-form-item label="项目名称">
+          <el-input v-model="createInvoiceForm.projectName" placeholder="选填，如项目/客户名称" clearable />
+        </el-form-item>
+        <el-form-item label="选择订单">
+          <div class="mb-8">仅展示状态为「已发货」「已到货」的订单，可多选后生成对账单。</div>
+          <el-table
+            ref="createInvoiceOrderTableRef"
+            :data="createInvoiceOrderList"
+            border
+            max-height="320"
+            @selection-change="onCreateInvoiceOrderSelectionChange"
+          >
+            <el-table-column type="selection" width="55" />
+            <el-table-column prop="omsOrderNo" label="OMS订单号" width="160" />
+            <el-table-column prop="status" label="状态" width="90" />
+            <el-table-column prop="platformName" label="甲方" min-width="140" show-overflow-tooltip />
+            <el-table-column prop="taxIncludedTotal" label="含税总价" width="110" align="right">
+              <template #default="{ row }">¥{{ (row.taxIncludedTotal ?? 0).toFixed(2) }}</template>
+            </el-table-column>
+          </el-table>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="createInvoiceDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="createInvoiceSubmitting" @click="submitCreateInvoice">生成对账单</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import draggable from 'vuedraggable'
+import request from '@/utils/request'
 
 interface FilterForm {
   dateRange: string[]
@@ -284,7 +329,16 @@ const tableData = ref<any[]>([])
 const operationLogs = ref<any[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(3)
+const total = ref(0)
+
+// 发起对账弹窗
+const createInvoiceDialogVisible = ref(false)
+const createInvoiceOrderList = ref<any[]>([])
+const createInvoiceForm = ref({ projectName: '', orderNos: [] as string[] })
+const createInvoiceSubmitting = ref(false)
+const createInvoiceOrderTableRef = ref()
+const detailStatusNext = ref('')
+const detailStatusUpdating = ref(false)
 
 const loadSettings = () => {
   const saved = localStorage.getItem('invoiceListColumns')
@@ -362,13 +416,30 @@ const onDragEnd = () => {
   console.log('列顺序已更新')
 }
 
-const fetchInvoices = () => {
-  // 模拟数据
-  tableData.value = [
-    { id: 1, billNo: 'INV20240101001', status: 'CONFIRMED', invoiceNo: 'FP20240101001', projectName: '项目A', sellerName: '供应商A', amount: 125000, createTime: '2024-01-01 10:30:00', confirmTime: '2024-01-02 14:20:00' },
-    { id: 2, billNo: 'INV20240102002', status: 'PENDING', invoiceNo: 'FP20240102002', projectName: '项目B', sellerName: '供应商B', amount: 85600, createTime: '2024-01-02 14:20:00', confirmTime: '' },
-    { id: 3, billNo: 'INV20240103003', status: 'DRAFT', invoiceNo: '', projectName: '项目C', sellerName: '供应商C', amount: 45000, createTime: '2024-01-03 09:15:00', confirmTime: '' }
-  ]
+const fetchInvoices = async () => {
+  try {
+    const statusParam = activeStatus.value === 'all' ? undefined : { draft: 'DRAFT', pending: 'PENDING', confirmed: 'CONFIRMED', settled: 'SETTLED' }[activeStatus.value]
+    const res: any = await request.get('/invoices', {
+      params: {
+        billNo: filterForm.value.billNo || undefined,
+        status: statusParam,
+        projectName: filterForm.value.projectName || undefined,
+        page: currentPage.value - 1,
+        size: pageSize.value
+      }
+    })
+    const content = res?.content ?? (Array.isArray(res) ? res : [])
+    tableData.value = content.map((item: any) => ({
+      ...item,
+      createTime: item.createTime ? (typeof item.createTime === 'string' ? item.createTime : item.createTime.replace('T', ' ')) : '',
+      confirmTime: item.confirmTime ? (typeof item.confirmTime === 'string' ? item.confirmTime : item.confirmTime.replace('T', ' ')) : ''
+    }))
+    total.value = res?.totalElements ?? content.length
+  } catch (e) {
+    console.error('获取对账单列表失败', e)
+    ElMessage.error('获取对账单列表失败')
+    tableData.value = []
+  }
 }
 
 onMounted(() => {
@@ -437,13 +508,72 @@ const handleGenerateSettlement = async (row: any) => {
         type: 'warning'
       }
     )
-
-    ElMessage.success('结算单生成成功')
+    await request.post(`/settlements/generate?invoiceBillNo=${encodeURIComponent(row.billNo)}`)
+    ElMessage.success('结算单生成成功，可到「结算单」页查看')
     fetchInvoices()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('生成结算单失败')
+      ElMessage.error(error?.response?.data?.message || error?.message || '生成结算单失败')
     }
+  }
+}
+
+// 发起对账：打开弹窗并拉取可对账订单（已发货/已到货）
+const openCreateInvoiceDialog = async () => {
+  createInvoiceDialogVisible.value = true
+  createInvoiceForm.value = { projectName: '', orderNos: [] }
+  try {
+    const [resShipped, resReceived]: any[] = await Promise.all([
+      request.get('/sales-orders', { params: { status: '已发货', page: 0, size: 200 } }),
+      request.get('/sales-orders', { params: { status: '已到货', page: 0, size: 200 } })
+    ])
+    const list1 = resShipped?.content ?? (Array.isArray(resShipped) ? resShipped : [])
+    const list2 = resReceived?.content ?? (Array.isArray(resReceived) ? resReceived : [])
+    const map = new Map()
+    ;[...list1, ...list2].forEach((o: any) => {
+      if (o.omsOrderNo && o.status && ['已发货', '已到货'].includes(o.status)) map.set(o.id, o)
+    })
+    createInvoiceOrderList.value = Array.from(map.values())
+    if (createInvoiceOrderList.value.length === 0) {
+      ElMessage.info('当前没有可对账的订单（需为已发货或已到货）')
+    }
+    await nextTick()
+    createInvoiceOrderTableRef.value?.clearSelection?.()
+  } catch (e) {
+    console.error(e)
+    ElMessage.error('获取订单列表失败')
+    createInvoiceOrderList.value = []
+  }
+}
+
+const onCreateInvoiceOrderSelectionChange = (rows: any[]) => {
+  createInvoiceForm.value.orderNos = (rows || []).map((r: any) => r.omsOrderNo).filter(Boolean)
+}
+
+const resetCreateInvoiceForm = () => {
+  createInvoiceForm.value = { projectName: '', orderNos: [] }
+  createInvoiceOrderList.value = []
+}
+
+const submitCreateInvoice = async () => {
+  const orderNos = createInvoiceForm.value.orderNos
+  if (!orderNos || orderNos.length === 0) {
+    ElMessage.warning('请至少选择一条销售订单')
+    return
+  }
+  createInvoiceSubmitting.value = true
+  try {
+    await request.post('/invoices/generate', {
+      orderNos,
+      projectName: createInvoiceForm.value.projectName || undefined
+    })
+    ElMessage.success('对账单生成成功')
+    createInvoiceDialogVisible.value = false
+    fetchInvoices()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || e?.message || '生成对账单失败')
+  } finally {
+    createInvoiceSubmitting.value = false
   }
 }
 
@@ -460,13 +590,36 @@ const showDetail = async (row: any) => {
     },
     products: row.products || []
   }
+  detailStatusNext.value = ''
   detailVisible.value = true
   detailActiveTab.value = 'products'
 
-  operationLogs.value = [
-    { createTime: '2024-01-01 10:30:00', operatorName: '张三', action: '创建', details: '创建对账单' },
-    { createTime: '2024-01-02 14:20:00', operatorName: '李四', action: '确认', details: '确认对账单' }
-  ]
+  try {
+    const res: any = await request.get(`/logs/INVOICE/${row.billNo}`)
+    operationLogs.value = Array.isArray(res) ? res : []
+  } catch {
+    operationLogs.value = []
+  }
+}
+
+const updateInvoiceStatusInDetail = async () => {
+  const billNo = currentBill.value?.billNo
+  const next = detailStatusNext.value
+  if (!billNo || !next) {
+    ElMessage.warning('请选择要推进的状态')
+    return
+  }
+  detailStatusUpdating.value = true
+  try {
+    await request.post(`/invoices/${billNo}/status?status=${encodeURIComponent(next)}`)
+    currentBill.value = { ...currentBill.value, status: next, activeStep: getStep(next) }
+    ElMessage.success('状态已更新')
+    fetchInvoices()
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || e?.message || '更新状态失败')
+  } finally {
+    detailStatusUpdating.value = false
+  }
 }
 </script>
 
@@ -481,6 +634,9 @@ const showDetail = async (row: any) => {
   margin-bottom: 15px;
   display: flex;
   gap: 10px;
+}
+.mb-8 {
+  margin-bottom: 8px;
 }
 .pagination {
   margin-top: 20px;

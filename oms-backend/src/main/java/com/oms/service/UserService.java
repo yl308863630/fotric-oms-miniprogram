@@ -39,7 +39,7 @@ public class UserService {
             if (role != null && !role.trim().isEmpty()) {
                 predicates.add(cb.equal(root.get("role"), role));
             }
-            return cb.and(predicates.toArray(new Predicate[0]));
+            return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
         });
     }
 
@@ -66,7 +66,8 @@ public class UserService {
             if (filterByCompanyTitle != null && !filterByCompanyTitle.trim().isEmpty()) {
                 predicates.add(cb.equal(root.get("companyTitle"), filterByCompanyTitle.trim()));
             }
-            return cb.and(predicates.toArray(new Predicate[0]));
+            // Hibernate 6：cb.and() 传入空数组会抛 IllegalArgumentException，管理员无筛选条件时必现 500
+            return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
         }, pageable);
     }
 
@@ -85,6 +86,10 @@ public class UserService {
             user.setCreateTime(existing.getCreateTime());
             // 保持最后登录时间
             user.setLastLoginTime(existing.getLastLoginTime());
+            // 反序列化若缺省 enabled 会为 null，避免写入违反 NOT NULL
+            if (user.getEnabled() == null) {
+                user.setEnabled(existing.getEnabled() != null ? existing.getEnabled() : true);
+            }
         }
         return userRepository.save(user);
     }
@@ -104,6 +109,29 @@ public class UserService {
         if (companyTitle == null || companyTitle.trim().isEmpty()) {
             return new ArrayList<>();
         }
-        return userRepository.findByCompanyTitle(companyTitle);
+        String target = companyTitle.trim();
+        List<User> exact = userRepository.findByCompanyTitle(target);
+        if (exact != null && !exact.isEmpty()) {
+            return exact;
+        }
+        // 兼容历史抬头差异（空格/中英文括号）
+        String normalizedTarget = normalizeCompanyTitle(target);
+        List<User> out = new ArrayList<>();
+        for (User u : userRepository.findAll()) {
+            String ct = normalizeCompanyTitle(u.getCompanyTitle());
+            if (ct.isEmpty()) continue;
+            if (ct.contains(normalizedTarget) || normalizedTarget.contains(ct)) {
+                out.add(u);
+            }
+        }
+        return out;
+    }
+
+    private String normalizeCompanyTitle(String s) {
+        if (s == null) return "";
+        return s.trim()
+                .replaceAll("\\s+", "")
+                .replace("（", "(")
+                .replace("）", ")");
     }
 }
