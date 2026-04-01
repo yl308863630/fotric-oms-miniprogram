@@ -1,7 +1,7 @@
 <!-- 新建销售订单 -->
 <view class="create-page">
   <scroll-view scroll-y class="form-scroll">
-    <!-- 甲方选择 -->
+    <!-- 甲方信息 -->
     <view class="form-section">
       <view class="section-title">甲方信息</view>
       <view class="form-item" bindtap="showPartyModal">
@@ -10,6 +10,10 @@
           <text class="{{formData.partyATitle ? 'value' : 'placeholder'}}">{{formData.partyATitle || '请选择甲方'}}</text>
           <text class="arrow">></text>
         </view>
+      </view>
+      <view class="form-item">
+        <text class="label">顶层客户名</text>
+        <input class="input" placeholder="请输入顶层客户名" value="{{formData.topLevelCustomerName}}" bindinput="onTopLevelCustomerInput" />
       </view>
     </view>
 
@@ -31,20 +35,78 @@
       </view>
     </view>
 
-    <!-- 联系人信息 -->
+    <!-- 收货信息 -->
     <view class="form-section">
-      <view class="section-title">联系人信息</view>
+      <view class="section-title">收货信息</view>
       <view class="form-item">
-        <text class="label">联系人 <text class="required">*</text></text>
-        <input class="input" placeholder="请输入联系人姓名" value="{{formData.contactName}}" bindinput="onContactNameInput" />
+        <text class="label">收货人 <text class="required">*</text></text>
+        <input class="input" placeholder="请输入收货人姓名" value="{{formData.receiverName}}" bindinput="onReceiverNameInput" />
       </view>
       <view class="form-item">
         <text class="label">联系电话 <text class="required">*</text></text>
-        <input class="input" type="number" maxlength="11" placeholder="请输入联系电话" value="{{formData.contactPhone}}" bindinput="onContactPhoneInput" />
+        <input class="input" type="number" maxlength="11" placeholder="请输入联系电话" value="{{formData.receiverPhone}}" bindinput="onReceiverPhoneInput" />
       </view>
       <view class="form-item">
         <text class="label">收货地址 <text class="required">*</text></text>
-        <input class="input" placeholder="请输入详细收货地址" value="{{formData.deliveryAddress}}" bindinput="onAddressInput" />
+        <input class="input" placeholder="请输入详细收货地址" value="{{formData.receiverAddress}}" bindinput="onReceiverAddressInput" />
+      </view>
+    </view>
+
+    <!-- 支付与订单类型 -->
+    <view class="form-section">
+      <view class="section-title">支付与订单</view>
+      <view class="form-item">
+        <text class="label">支付方式</text>
+        <picker mode="selector" range="{{paymentMethodOptions}}" range-key="label" bindchange="onPaymentMethodChange">
+          <view class="input-wrapper">
+            <text class="{{formData.paymentMethod ? 'value' : 'placeholder'}}">{{formData.paymentMethod || '请选择支付方式'}}</text>
+            <text class="arrow">></text>
+          </view>
+        </picker>
+      </view>
+      <view class="form-item">
+        <text class="label">订单类型</text>
+        <picker mode="selector" range="{{orderTypeOptions}}" range-key="label" bindchange="onOrderTypeChange">
+          <view class="input-wrapper">
+            <text class="{{formData.orderType ? 'value' : 'placeholder'}}">{{formData.orderType || '请选择订单类型'}}</text>
+            <text class="arrow">></text>
+          </view>
+        </picker>
+      </view>
+    </view>
+
+    <!-- 线下销售 -->
+    <view class="form-section">
+      <view class="section-title">线下销售</view>
+      <view class="form-item">
+        <text class="label">线下销售</text>
+        <picker mode="selector" range="{{offlineSalesOptions}}" range-key="label" bindchange="onOfflineSalesChange">
+          <view class="input-wrapper">
+            <text class="{{formData.offlineSales ? 'value' : 'placeholder'}}">{{formData.offlineSales || '请选择'}}</text>
+            <text class="arrow">></text>
+          </view>
+        </picker>
+      </view>
+      <view class="form-item" wx:if="{{formData.offlineSales === '是'}}">
+        <text class="label">线下合同号</text>
+        <input class="input" placeholder="请输入线下合同号" value="{{formData.offlineContractNo}}" bindinput="onOfflineContractNoInput" />
+      </view>
+      <view class="form-item" wx:if="{{formData.offlineSales === '是'}}">
+        <text class="label">线下出货价</text>
+        <input class="input" type="digit" placeholder="请输入线下出货价" value="{{formData.offlineShippingPrice}}" bindinput="onOfflineShippingPriceInput" />
+      </view>
+      <view class="form-item" wx:if="{{formData.offlineSales === '是'}}">
+        <text class="label">扣点(%)</text>
+        <input class="input" type="digit" placeholder="请输入扣点" value="{{formData.deductionRate}}" bindinput="onDeductionRateInput" />
+      </view>
+    </view>
+
+    <!-- 交付方采购价 -->
+    <view class="form-section">
+      <view class="section-title">采购价格</view>
+      <view class="form-item">
+        <text class="label">交付方采购价</text>
+        <input class="input" type="digit" placeholder="请输入采购价" value="{{formData.deliveryPartyPurchasePrice}}" bindinput="onDeliveryPartyPurchasePriceInput" />
       </view>
     </view>
 

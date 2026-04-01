@@ -6,30 +6,51 @@ Page({
   data: {
     // 表单数据
     formData: {
-      partyATitle: '',      // 甲方名称
-      partyAId: null,       // 甲方ID
-      platformName: '',     // 平台名称
-      platformOrderNo: '',  // 平台订单号
-      contactName: '',      // 联系人
-      contactPhone: '',     // 电话
-      deliveryAddress: '',  // 收货地址
-      remark: '',           // 备注
-      items: [],             // 商品明细
-      contractFile: null,    // 合同文件
-      contractUrl: ''        // 合同URL
+      // 甲方信息
+      partyATitle: '',
+      partyAId: null,
+      // 平台信息
+      platformName: '',
+      platformOrderNo: '',
+      topLevelCustomerName: '',  // 顶层客户名
+      // 收货信息
+      receiverName: '',
+      receiverPhone: '',
+      receiverAddress: '',
+      // 支付与订单类型
+      paymentMethod: '',
+      orderType: '',
+      // 线下销售
+      offlineSales: '',
+      offlineContractNo: '',
+      offlineShippingPrice: '',
+      deductionRate: '',
+      // 交付方采购价
+      deliveryPartyPurchasePrice: '',
+      // 备注
+      remark: '',
+      // 商品明细
+      items: [],
+      // 合同
+      contractFile: null,
+      contractUrl: ''
     },
+
     // 商品选择弹窗
     showProductPicker: false,
     productList: [],
     productPage: 0,
     productLoading: false,
+
     // 甲方选择弹窗
     showPartyPicker: false,
     partyList: [],
     partyPage: 0,
     partyLoading: false,
+
     // 提交中
     submitting: false,
+
     // 平台选项
     platformOptions: [
       { value: '京东工业', label: '京东工业' },
@@ -39,35 +60,92 @@ Page({
       { value: '晨光', label: '晨光' },
       { value: '齐心', label: '齐心' },
       { value: '其他', label: '其他' }
+    ],
+
+    // 支付方式选项
+    paymentMethodOptions: [
+      { value: '全款', label: '全款' },
+      { value: '账期', label: '账期' },
+      { value: '背靠背', label: '背靠背' }
+    ],
+
+    // 订单类型选项
+    orderTypeOptions: [
+      { value: '自营', label: '自营' },
+      { value: '第三方', label: '第三方' }
+    ],
+
+    // 线下销售选项
+    offlineSalesOptions: [
+      { value: '是', label: '是' },
+      { value: '否', label: '否' }
     ]
   },
 
-  onLoad() {
-    // 可以从参数获取是否是指派过来的
-  },
+  onLoad() {},
 
-  // 输入处理
+  // ========== 输入处理 ==========
   onPlatformChange(e) {
     const index = e.detail.value;
     this.setData({ 'formData.platformName': this.data.platformOptions[index].value });
   },
+
   onPlatformOrderNoInput(e) {
     this.setData({ 'formData.platformOrderNo': e.detail.value });
   },
-  onContactNameInput(e) {
-    this.setData({ 'formData.contactName': e.detail.value });
+
+  onTopLevelCustomerInput(e) {
+    this.setData({ 'formData.topLevelCustomerName': e.detail.value });
   },
-  onContactPhoneInput(e) {
-    this.setData({ 'formData.contactPhone': e.detail.value });
+
+  onReceiverNameInput(e) {
+    this.setData({ 'formData.receiverName': e.detail.value });
   },
-  onAddressInput(e) {
-    this.setData({ 'formData.deliveryAddress': e.detail.value });
+
+  onReceiverPhoneInput(e) {
+    this.setData({ 'formData.receiverPhone': e.detail.value });
   },
+
+  onReceiverAddressInput(e) {
+    this.setData({ 'formData.receiverAddress': e.detail.value });
+  },
+
+  onPaymentMethodChange(e) {
+    const index = e.detail.value;
+    this.setData({ 'formData.paymentMethod': this.data.paymentMethodOptions[index].value });
+  },
+
+  onOrderTypeChange(e) {
+    const index = e.detail.value;
+    this.setData({ 'formData.orderType': this.data.orderTypeOptions[index].value });
+  },
+
+  onOfflineSalesChange(e) {
+    const index = e.detail.value;
+    this.setData({ 'formData.offlineSales': this.data.offlineSalesOptions[index].value });
+  },
+
+  onOfflineContractNoInput(e) {
+    this.setData({ 'formData.offlineContractNo': e.detail.value });
+  },
+
+  onOfflineShippingPriceInput(e) {
+    this.setData({ 'formData.offlineShippingPrice': e.detail.value });
+  },
+
+  onDeductionRateInput(e) {
+    this.setData({ 'formData.deductionRate': e.detail.value });
+  },
+
+  onDeliveryPartyPurchasePriceInput(e) {
+    this.setData({ 'formData.deliveryPartyPurchasePrice': e.detail.value });
+  },
+
   onRemarkInput(e) {
     this.setData({ 'formData.remark': e.detail.value });
   },
 
-  // 上传合同
+  // ========== 合同上传 ==========
   uploadContract() {
     wx.chooseMessageFile({
       count: 1,
@@ -80,11 +158,9 @@ Page({
     });
   },
 
-  // 解析合同（OCR）
   async parseContract(file) {
     wx.showLoading({ title: '正在解析合同...' });
     try {
-      // 上传文件到服务器
       const uploadRes = await new Promise((resolve, reject) => {
         wx.uploadFile({
           url: `${app.globalData.apiBase}/api/files/upload`,
@@ -97,7 +173,6 @@ Page({
 
       const parseData = JSON.parse(uploadRes.data);
       if (parseData.url) {
-        // 调用OCR解析
         const ocrRes = await new Promise((resolve, reject) => {
           wx.request({
             url: `${app.globalData.apiBase}/api/contracts/parse`,
@@ -110,17 +185,13 @@ Page({
 
         const result = ocrRes.data;
         if (result.success && result.data) {
-          // 自动填充解析结果
           const data = result.data;
           wx.showToast({ title: '合同解析成功', icon: 'success' });
           
-          // 如果解析出甲方名称，尝试匹配合作方
           if (data.partyAName) {
             this.setData({ 'formData.partyATitle': data.partyAName });
           }
-          // 如果解析出金额
           if (data.amount) {
-            // 可以设置到备注或其他字段
             this.setData({ 'formData.remark': `合同金额：¥${data.amount}` });
           }
           this.setData({ 'formData.contractUrl': parseData.url });
@@ -134,12 +205,11 @@ Page({
     }
   },
 
-  // 删除合同
   removeContract() {
     this.setData({ 'formData.contractFile': null, 'formData.contractUrl': '' });
   },
 
-  // 选择甲方
+  // ========== 选择甲方 ==========
   showPartyModal() {
     this.setData({ showPartyPicker: true, partyPage: 0, partyList: [] });
     this.loadPartyList();
@@ -159,7 +229,6 @@ Page({
     }
   },
 
-  // 选择甲方
   selectParty(e) {
     const { id, title } = e.currentTarget.dataset;
     this.setData({
@@ -169,7 +238,7 @@ Page({
     });
   },
 
-  // 显示商品选择弹窗
+  // ========== 选择商品 ==========
   showProductModal() {
     this.setData({ showProductPicker: true, productPage: 0, productList: [] });
     this.loadProductList();
@@ -189,16 +258,13 @@ Page({
     }
   },
 
-  // 选择商品
   selectProduct(e) {
     const product = e.currentTarget.dataset.item;
-    // 检查是否已添加
     const existingIndex = this.data.formData.items.findIndex(item => item.productId === product.id);
     if (existingIndex > -1) {
       wx.showToast({ title: '商品已添加', icon: 'none' });
       return;
     }
-    
     const newItem = {
       productId: product.id,
       productName: product.name,
@@ -206,14 +272,12 @@ Page({
       price: product.price || 0,
       quantity: 1
     };
-    
     this.setData({
       'formData.items': [...this.data.formData.items, newItem],
       showProductPicker: false
     });
   },
 
-  // 删除商品
   removeItem(e) {
     const index = e.currentTarget.dataset.index;
     const items = [...this.data.formData.items];
@@ -221,7 +285,6 @@ Page({
     this.setData({ 'formData.items': items });
   },
 
-  // 修改商品数量
   onQuantityChange(e) {
     const index = e.currentTarget.dataset.index;
     const value = e.detail.value;
@@ -230,7 +293,6 @@ Page({
     this.setData({ 'formData.items': items });
   },
 
-  // 修改商品单价
   onPriceChange(e) {
     const index = e.currentTarget.dataset.index;
     const value = e.detail.value;
@@ -239,16 +301,16 @@ Page({
     this.setData({ 'formData.items': items });
   },
 
-  // 计算总金额
+  // ========== 计算 ==========
   calculateTotal() {
     const { items } = this.data.formData;
     return items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
   },
 
-  // 提交订单
+  // ========== 提交订单 ==========
   async submitOrder() {
     const { formData, submitting } = this.data;
-    
+
     // 验证必填项
     if (!formData.partyATitle) {
       wx.showToast({ title: '请选择甲方', icon: 'none' });
@@ -262,11 +324,11 @@ Page({
       wx.showToast({ title: '请输入平台订单号', icon: 'none' });
       return;
     }
-    if (!formData.contactName || !formData.contactPhone) {
-      wx.showToast({ title: '请填写联系人信息', icon: 'none' });
+    if (!formData.receiverName || !formData.receiverPhone) {
+      wx.showToast({ title: '请填写收货人信息', icon: 'none' });
       return;
     }
-    if (!formData.deliveryAddress) {
+    if (!formData.receiverAddress) {
       wx.showToast({ title: '请填写收货地址', icon: 'none' });
       return;
     }
@@ -279,15 +341,32 @@ Page({
     this.setData({ submitting: true });
 
     try {
+      const totalAmount = this.calculateTotal();
       const submitData = {
+        // 甲方
         partyAId: formData.partyAId,
         partyATitle: formData.partyATitle,
+        // 平台
         platformName: formData.platformName,
         platformOrderNo: formData.platformOrderNo,
-        contactName: formData.contactName,
-        contactPhone: formData.contactPhone,
-        deliveryAddress: formData.deliveryAddress,
+        topLevelCustomerName: formData.topLevelCustomerName,
+        // 收货
+        receiverName: formData.receiverName,
+        receiverPhone: formData.receiverPhone,
+        receiverAddress: formData.receiverAddress,
+        // 支付方式
+        paymentMethod: formData.paymentMethod,
+        orderType: formData.orderType,
+        // 线下销售
+        offlineSales: formData.offlineSales,
+        offlineContractNo: formData.offlineContractNo,
+        offlineShippingPrice: formData.offlineShippingPrice ? parseFloat(formData.offlineShippingPrice) : null,
+        deductionRate: formData.deductionRate ? parseFloat(formData.deductionRate) : null,
+        // 交付方采购价
+        deliveryPartyPurchasePrice: formData.deliveryPartyPurchasePrice ? parseFloat(formData.deliveryPartyPurchasePrice) : null,
+        // 备注
         remark: formData.remark,
+        // 商品
         items: formData.items.map(item => ({
           productId: item.productId,
           productName: item.productName,
@@ -296,7 +375,11 @@ Page({
           quantity: item.quantity,
           amount: item.price * item.quantity
         })),
-        totalAmount: this.calculateTotal()
+        // 金额
+        amount: totalAmount,
+        taxIncludedTotal: totalAmount,
+        // 合同
+        contractUrl: formData.contractUrl
       };
 
       await salesOrderApi.create(submitData);
