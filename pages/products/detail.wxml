@@ -1,0 +1,42 @@
+<!-- 商品详情 -->
+<view class="detail-page">
+  <view class="loading" wx:if="{{loading}}">加载中...</view>
+  
+  <view class="content" wx:if="{{detail && !loading}}">
+    <view class="header">
+      <text class="name">{{detail.name || detail.productName}}</text>
+      <text class="status {{detail.status}}">{{detail.status === 'ACTIVE' ? '在售' : '下架'}}</text>
+    </view>
+    
+    <view class="section">
+      <view class="section-title">基本信息</view>
+      <view class="info-row">
+        <text class="label">型号</text>
+        <text class="value">{{detail.model || '-'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">配置</text>
+        <text class="value">{{detail.specification || detail.config || '-'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">单位</text>
+        <text class="value">{{detail.unit || '台'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">售价</text>
+        <text class="value price">¥{{detail.price || 0}}</text>
+      </view>
+      <view class="info-row">
+        <text class="label">保修期</text>
+        <text class="value">{{detail.warrantyPeriod || '12个月'}}</text>
+      </view>
+    </view>
+    
+    <view class="section" wx:if="{{detail.description}}">
+      <view class="section-title">商品描述</view>
+      <text class="description">{{detail.description}}</text>
+    </view>
+  </view>
+  
+  <view class="empty" wx:if="{{!detail && !loading}}">商品不存在</view>
+</view>
