@@ -1,0 +1,103 @@
+<!-- 合并对账页面 -->
+<view class="reconciliation-page">
+  <!-- 已选订单列表 -->
+  <view class="section" wx:if="{{selectedOrders.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">已选订单 ({{selectedOrders.length}})</text>
+      <text class="section-total">合计: ¥{{calculateTotal()}}</text>
+    </view>
+    <view class="selected-list">
+      <view class="selected-item" wx:for="{{selectedOrders}}" wx:key="id">
+        <view class="item-info">
+          <text class="order-no">{{item.platformOrderNo || item.omsOrderNo}}</text>
+          <text class="party">{{item.partyATitle}}</text>
+        </view>
+        <view class="item-right">
+          <text class="amount">¥{{item.amount || 0}}</text>
+          <text class="remove-btn" data-index="{{index}}" bindtap="removeSelected">×</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 可选订单列表 -->
+  <view class="section">
+    <view class="section-header">
+      <view class="checkbox-item" bindtap="toggleSelectAll">
+        <view class="checkbox {{selectAll ? 'checked' : ''}}"></view>
+        <text>全选</text>
+      </view>
+      <text class="section-title">可对账订单</text>
+    </view>
+    <scroll-view scroll-y class="order-list">
+      <view 
+        class="order-item {{selectedOrders.find(o => o.id === item.id) ? 'selected' : ''}}" 
+        wx:for="{{availableOrders}}" 
+        wx:key="id"
+        data-item="{{item}}"
+        bindtap="toggleSelect"
+      >
+        <view class="checkbox-item">
+          <view class="checkbox {{selectedOrders.find(o => o.id === item.id) ? 'checked' : ''}}"></view>
+        </view>
+        <view class="order-info">
+          <view class="order-main">
+            <text class="order-no">{{item.platformOrderNo || item.omsOrderNo}}</text>
+            <text class="status-badge {{item.status}}">{{item.status}}</text>
+          </view>
+          <view class="order-sub">
+            <text>{{item.partyATitle}}</text>
+            <text class="amount">¥{{item.amount || 0}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="empty" wx:if="{{!availableOrders.length && !loading}}">暂无可对账订单</view>
+      <view class="load-more" wx:if="{{loading}}">加载中...</view>
+    </scroll-view>
+  </view>
+
+  <!-- 对账信息表单 -->
+  <view class="section">
+    <view class="section-title">对账信息</view>
+    <view class="form-item" bindtap="showPartyModal">
+      <text class="label">甲方 <text class="required">*</text></text>
+      <view class="input-wrapper">
+        <text class="{{reconciliationForm.partyATitle ? 'value' : 'placeholder'}}">{{reconciliationForm.partyATitle || '请选择甲方'}}</text>
+        <text class="arrow">></text>
+      </view>
+    </view>
+    <view class="form-item">
+      <text class="label">甲方对账单号</text>
+      <input class="input" placeholder="请输入对账单号" value="{{reconciliationForm.partyReconciliationNo}}" bindinput="onReconciliationNoInput" />
+    </view>
+    <view class="form-item">
+      <text class="label">备注</text>
+      <input class="input" placeholder="请输入备注" value="{{reconciliationForm.remark}}" bindinput="onRemarkInput" />
+    </view>
+  </view>
+
+  <!-- 底部占位 -->
+  <view class="bottom-space"></view>
+  <view class="bottom-bar">
+    <view class="total-info">
+      <text>已选 {{selectedOrders.length}} 单</text>
+      <text class="total-amount">¥{{calculateTotal()}}</text>
+    </view>
+    <button class="submit-btn" bindtap="submitReconciliation" loading="{{submitting}}">创建对账单</button>
+  </view>
+
+  <!-- 甲方选择弹窗 -->
+  <view class="modal-mask" wx:if="{{showPartyPicker}}" bindtap="showPartyPicker=false"></view>
+  <view class="modal-bottom {{showPartyPicker ? 'show' : ''}}">
+    <view class="modal-header">
+      <text class="modal-title">选择甲方</text>
+      <text class="modal-close" bindtap="showPartyPicker=false">×</text>
+    </view>
+    <scroll-view scroll-y class="modal-content">
+      <view class="option-item" wx:for="{{partyList}}" wx:key="id" data-id="{{item.id}}" data-title="{{item.title}}" bindtap="selectParty">
+        <text>{{item.title}}</text>
+      </view>
+      <view class="empty" wx:if="{{!partyList.length}}">暂无甲方</view>
+    </scroll-view>
+  </view>
+</view>

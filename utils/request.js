@@ -83,6 +83,8 @@ export const settlementApi = {
   salesReconciliationList: (params) => request('/api/sales-reconciliations', { method: 'GET', data: params }),
   salesSettlementList: (params) => request('/api/sales-settlements', { method: 'GET', data: params }),
   salesInvoiceList: (params) => request('/api/sales-invoices', { method: 'GET', data: params }),
+  // 创建合并对账单
+  createReconciliation: (data) => request('/api/sales-reconciliations/batch', { method: 'POST', data }),
 };
 
 // 登录 API

@@ -46,8 +46,22 @@
   color: #fff;
 }
 
+.action-btns {
+  display: flex;
+  gap: 16rpx;
+  flex-shrink: 0;
+}
+
+.batch-btn {
+  padding: 12rpx 24rpx;
+  background: #52c41a;
+  color: #fff;
+  font-size: 24rpx;
+  border-radius: 24rpx;
+}
+
 .add-btn {
-  width: 120rpx;
+  width: 100rpx;
   height: 56rpx;
   line-height: 56rpx;
   text-align: center;
@@ -55,8 +69,6 @@
   color: #fff;
   font-size: 26rpx;
   border-radius: 28rpx;
-  margin-left: 16rpx;
-  flex-shrink: 0;
 }
 
 .order-list {
@@ -254,6 +266,10 @@
   color: #999;
   justify-content: center;
   margin-top: 16rpx;
+}
+
+.action-item.warn {
+  color: #ff4d4f;
 }
 
 .action-icon {

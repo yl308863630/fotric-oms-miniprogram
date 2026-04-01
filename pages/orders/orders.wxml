@@ -16,7 +16,10 @@
         bindtap="onStatusChange"
       >{{item.label}}</view>
     </scroll-view>
-    <view class="add-btn" bindtap="goToCreate" wx:if="{{canCreateOrder}}">+ 新建</view>
+    <view class="action-btns">
+      <view class="batch-btn" bindtap="goToBatchReconciliation" wx:if="{{canBatchReconcile}}">合并对账</view>
+      <view class="add-btn" bindtap="goToCreate" wx:if="{{canCreateOrder}}">+ 新建</view>
+    </view>
   </view>
   
   <!-- 订单列表 -->

@@ -21,6 +21,10 @@ Page({
     canSettle: false,
     canErpEntry: false,
     canUploadReceipt: false,
+    canAssign: false,
+    canEdit: false,
+    canReturn: false,
+    canBatchReconcile: false,
     
     statusOptions: [
       { value: '', label: '全部' },
@@ -53,14 +57,22 @@ Page({
     const canSettle = app.hasPermission('settle');
     const canErpEntry = app.hasPermission('erp_entry');
     const canUploadReceipt = app.hasPermission('upload_receipt');
+    const canAssign = app.hasPermission('assign_order');
+    const canEdit = app.hasPermission('edit_order');
+    const canReturn = app.hasPermission('return_order');
+    const canBatchReconcile = app.hasPermission('batch_reconcile');
     
-    this.setData({
-      canCreateOrder,
-      canConfirm,
-      canShip,
-      canSettle,
-      canErpEntry,
-      canUploadReceipt
+    this.setData({ 
+      canCreateOrder, 
+      canConfirm, 
+      canShip, 
+      canSettle, 
+      canErpEntry, 
+      canUploadReceipt,
+      canAssign,
+      canEdit,
+      canReturn,
+      canBatchReconcile
     });
   },
 
@@ -82,10 +94,7 @@ Page({
     if (this.data.loading || !this.data.hasMore) return;
     this.setData({ loading: true });
     try {
-      const params = { 
-        page: this.data.page, 
-        size: this.data.size 
-      };
+      const params = { page: this.data.page, size: this.data.size };
       if (this.data.statusFilter) {
         params.masterStatus = this.data.statusFilter;
       }
@@ -127,6 +136,15 @@ Page({
     wx.navigateTo({ url: '/pages/orders/create' });
   },
 
+  // 合并对账
+  goToBatchReconciliation() {
+    if (!this.data.canBatchReconcile) {
+      wx.showToast({ title: '无权限操作', icon: 'none' });
+      return;
+    }
+    wx.navigateTo({ url: '/pages/reconciliation/create' });
+  },
+
   goToDetail(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({ url: `/pages/orders/detail?id=${id}` });
@@ -147,7 +165,6 @@ Page({
     });
   },
 
-  // 根据权限判断是否显示操作
   handleConfirm() {
     if (!this.data.canConfirm) {
       wx.showToast({ title: '无权限操作', icon: 'none' });
@@ -198,7 +215,6 @@ Page({
     wx.navigateTo({ url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=erp` });
   },
 
-  // 指派订单
   handleAssign() {
     if (!this.data.canAssign) {
       wx.showToast({ title: '无权限操作', icon: 'none' });
@@ -208,7 +224,6 @@ Page({
     wx.navigateTo({ url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=assign` });
   },
 
-  // 编辑订单
   handleEdit() {
     if (!this.data.canEdit) {
       wx.showToast({ title: '无权限操作', icon: 'none' });
@@ -218,7 +233,6 @@ Page({
     wx.navigateTo({ url: `/pages/orders/detail?id=${this.data.currentOrder.id}&action=edit` });
   },
 
-  // 退回订单
   handleReturn() {
     if (!this.data.canReturn) {
       wx.showToast({ title: '无权限操作', icon: 'none' });
