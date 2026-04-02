@@ -1,0 +1,136 @@
+<!-- 采购订单详情 -->
+<view class="detail-page">
+  <view wx:if="{{loading}}" class="loading">
+    <text>加载中...</text>
+  </view>
+
+  <view wx:elif="{{!order}}" class="empty">
+    <text>订单不存在</text>
+  </view>
+
+  <view wx:else class="content">
+    <!-- 订单状态 -->
+    <view class="section status-section">
+      <view class="status-row">
+        <text class="status-label">订单状态</text>
+        <text class="status-value {{order.status}}">{{order.statusText || order.status || '待确认'}}</text>
+      </view>
+      <view class="status-row">
+        <text class="status-label">采购单号</text>
+        <text class="status-value">{{order.purchaseOrderNo || '-'}}</text>
+      </view>
+    </view>
+
+    <!-- 乙方信息 -->
+    <view class="section">
+      <view class="section-title">乙方信息</view>
+      <view class="info-item">
+        <text class="label">乙方名称</text>
+        <text class="value">{{order.partyBTitle || '-'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">乙方业务员</text>
+        <text class="value">{{order.partyBContact || '-'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">联系电话</text>
+        <text class="value">{{order.partyBPhone || '-'}}</text>
+      </view>
+    </view>
+
+    <!-- 交付方信息 -->
+    <view class="section">
+      <view class="section-title">交付方信息</view>
+      <view class="info-item">
+        <text class="label">交付方名称</text>
+        <text class="value">{{order.deliveryPartyName || '-'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">交付方联系人</text>
+        <text class="value">{{order.deliveryPartyContact || '-'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">联系电话</text>
+        <text class="value">{{order.deliveryPartyPhone || '-'}}</text>
+      </view>
+    </view>
+
+    <!-- 商品信息 -->
+    <view class="section">
+      <view class="section-title">商品信息</view>
+      <view class="info-item">
+        <text class="label">产品型号</text>
+        <text class="value">{{order.productModel || '-'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">物料号</text>
+        <text class="value">{{order.materialNo || '-'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">数量</text>
+        <text class="value">{{order.quantity || 0}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">单价</text>
+        <text class="value">¥{{order.unitPrice || 0}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">采购价</text>
+        <text class="value amount">¥{{order.purchasePrice || 0}}</text>
+      </view>
+    </view>
+
+    <!-- 对账信息 -->
+    <view class="section">
+      <view class="section-title">对账信息</view>
+      <view class="info-item">
+        <text class="label">对账状态</text>
+        <text class="value">{{order.reconciliationStatus || '待对账'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">发票号</text>
+        <text class="value">{{order.invoiceNumber || '-'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">付款状态</text>
+        <text class="value">{{order.paymentStatus || '待付款'}}</text>
+      </view>
+    </view>
+
+    <!-- ERP录单信息 -->
+    <view class="section" wx:if="{{order.erpEntryTime}}">
+      <view class="section-title">ERP录单</view>
+      <view class="info-item">
+        <text class="label">录单时间</text>
+        <text class="value">{{order.erpEntryTime}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">录单人</text>
+        <text class="value">{{order.erpEntryOperator || '-'}}</text>
+      </view>
+    </view>
+
+    <!-- 时间信息 -->
+    <view class="section">
+      <view class="section-title">时间信息</view>
+      <view class="info-item">
+        <text class="label">创建时间</text>
+        <text class="value">{{order.createTime || '-'}}</text>
+      </view>
+      <view class="info-item" wx:if="{{order.updateTime}}">
+        <text class="label">更新时间</text>
+        <text class="value">{{order.updateTime}}</text>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-bar">
+      <button class="action-btn" bindtap="handleConfirm" wx:if="{{canConfirm && order.status === '待确认'}}">确认订单</button>
+      <button class="action-btn" bindtap="handleSettle" wx:if="{{canSettle}}">结算</button>
+      <button class="action-btn" bindtap="handleReceipt" wx:if="{{canUploadReceipt}}">上传签收单</button>
+      <button class="action-btn" bindtap="handleErp" wx:if="{{canErpEntry}}">ERP录单</button>
+      <button class="action-btn" bindtap="handleEdit" wx:if="{{canEdit}}">编辑</button>
+      <button class="action-btn warn" bindtap="handleReturn" wx:if="{{canReturn}}">退回</button>
+    </view>
+  </view>
+</view>

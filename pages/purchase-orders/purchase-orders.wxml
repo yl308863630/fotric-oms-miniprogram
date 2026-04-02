@@ -1,0 +1,92 @@
+<!-- 采购订单列表 -->
+<view class="orders-page">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索采购单号/乙方名称" bindconfirm="onSearch" />
+  </view>
+
+  <!-- 顶部状态栏 -->
+  <view class="top-bar">
+    <scroll-view class="status-tabs" scroll-x>
+      <view class="tab {{statusFilter === item.value ? 'active' : ''}}" wx:for="{{statusOptions}}" wx:key="value" data-status="{{item.value}}" bindtap="onStatusChange">
+        {{item.label}}
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 订单列表 -->
+  <scroll-view class="order-list" scroll-y>
+    <view class="order-card" wx:for="{{orders}}" wx:key="id">
+      <view class="card-header">
+        <text class="order-no">{{item.purchaseOrderNo || item.id}}</text>
+        <view class="header-right">
+          <text class="status-badge {{item.status}}">{{item.statusText || item.status || '待确认'}}</text>
+          <text class="action-btn" catchtap="showActionSheet" data-item="{{item}}">⋮</text>
+        </view>
+      </view>
+      <view class="card-body" bindtap="goToDetail" data-id="{{item.id}}">
+        <view class="info-row">
+          <text class="label">乙方：</text>
+          <text class="value">{{item.partyBTitle || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">交付方：</text>
+          <text class="value">{{item.deliveryPartyName || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">采购价：</text>
+          <text class="value amount">¥{{item.purchasePrice || 0}}</text>
+        </view>
+      </view>
+      <view class="card-footer">
+        <text class="time">{{item.createTime}}</text>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{!orders.length && !loading}}">
+      <text>暂无采购订单</text>
+    </view>
+    <view class="load-more" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+    <view class="load-more" wx:if="{{!hasMore && orders.length}}">
+      <text>没有更多了</text>
+    </view>
+  </scroll-view>
+
+  <!-- 操作菜单 -->
+  <view class="action-sheet-mask" wx:if="{{actionSheetVisible}}" bindtap="hideActionSheet"></view>
+  <view class="action-sheet {{actionSheetVisible ? 'show' : ''}}">
+    <view class="action-item" bindtap="handleConfirm" wx:if="{{canConfirm}}">
+      <text class="action-icon">✓</text>
+      <text>确认订单</text>
+    </view>
+    <view class="action-item" bindtap="handleEdit" wx:if="{{canEdit}}">
+      <text class="action-icon">✏️</text>
+      <text>编辑</text>
+    </view>
+    <view class="action-item" bindtap="handleReceipt" wx:if="{{canUploadReceipt}}">
+      <text class="action-icon">📄</text>
+      <text>上传签收单</text>
+    </view>
+    <view class="action-item" bindtap="handleSettle" wx:if="{{canSettle}}">
+      <text class="action-icon">💰</text>
+      <text>结算</text>
+    </view>
+    <view class="action-item" bindtap="handleErp" wx:if="{{canErpEntry}}">
+      <text class="action-icon">📝</text>
+      <text>ERP录单</text>
+    </view>
+    <view class="action-item" bindtap="handleContract">
+      <text class="action-icon">📃</text>
+      <text>查看合同</text>
+    </view>
+    <view class="action-item warn" bindtap="handleReturn" wx:if="{{canReturn}}">
+      <text class="action-icon">↩️</text>
+      <text>退回</text>
+    </view>
+    <view class="action-item cancel" bindtap="hideActionSheet">
+      <text>取消</text>
+    </view>
+  </view>
+</view>

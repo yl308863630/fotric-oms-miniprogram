@@ -58,6 +58,8 @@ export const productApi = {
   create: (data) => request('/api/products', { method: 'POST', data }),
   update: (id, data) => request(`/api/products/${id}`, { method: 'PUT', data }),
   delete: (id) => request(`/api/products/${id}`, { method: 'DELETE' }),
+  // 上下架
+  updateStatus: (id, isActive) => request(`/api/products/${id}/status`, { method: 'PATCH', data: { isActive } }),
 };
 
 // 合作伙伴 API
@@ -67,6 +69,21 @@ export const partnerApi = {
   create: (data) => request('/api/partner-info', { method: 'POST', data }),
   update: (id, data) => request(`/api/partner-info/${id}`, { method: 'PUT', data }),
   delete: (id) => request(`/api/partner-info/${id}`, { method: 'DELETE' }),
+};
+
+// 采购订单 API
+export const purchaseOrderApi = {
+  list: (params) => request('/api/purchase-orders', { method: 'GET', data: params }),
+  get: (id) => request(`/api/purchase-orders/${id}`, { method: 'GET' }),
+  create: (data) => request('/api/purchase-orders', { method: 'POST', data }),
+  update: (id, data) => request(`/api/purchase-orders/${id}`, { method: 'PUT', data }),
+  delete: (id) => request(`/api/purchase-orders/${id}`, { method: 'DELETE' }),
+  // 更新付款状态
+  updatePaymentStatus: (id, status) => request(`/api/purchase-orders/${id}/payment-status`, { method: 'PATCH', data: { status } }),
+  // 更新对账状态
+  updateReconciliationStatus: (id, status, invoiceNumber) => request(`/api/purchase-orders/${id}/reconciliation-status`, { method: 'PATCH', data: { status, invoiceNumber } }),
+  // ERP录单
+  updateErpEntry: (id, data) => request(`/api/purchase-orders/${id}/erp-entry`, { method: 'PATCH', data }),
 };
 
 // 合同 API

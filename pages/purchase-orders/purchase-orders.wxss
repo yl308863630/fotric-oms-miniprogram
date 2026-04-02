@@ -1,0 +1,14 @@
+/* 采购订单列表样式 - 复用订单列表样式 */
+@import '../orders/orders.wxss';
+
+/* 采购订单特定样式调整 */
+.status-badge.待指派 { background: #fff7e6; color: #fa8c16; }
+.status-badge.待确认 { background: #e6f7ff; color: #1890ff; }
+.status-badge.待盖章 { background: #fff0f6; color: #eb2f96; }
+.status-badge.待发货 { background: #fff7e6; color: #fa8c16; }
+.status-badge.待签收 { background: #fff7e6; color: #fa8c16; }
+.status-badge.待对账 { background: #f9f0ff; color: #722ed1; }
+.status-badge.待开票 { background: #f9f0ff; color: #722ed1; }
+.status-badge.待结算 { background: #fff7e6; color: #fa8c16; }
+.status-badge.已完成 { background: #f0f5ff; color: #2f54eb; }
+.status-badge.已取消 { background: #fff1f0; color: #ff4d4f; }

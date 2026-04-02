@@ -2,41 +2,100 @@
 <view class="products-page">
   <!-- 搜索栏 -->
   <view class="search-bar">
-    <input 
-      class="search-input" 
-      placeholder="搜索商品名称" 
-      bindconfirm="onSearch"
-    />
+    <input class="search-input" placeholder="搜索商品名称" bindconfirm="onSearch" />
+    <view class="filter-btn" bindtap="toggleFilter">
+      <text>筛选</text>
+    </view>
   </view>
-  
+
+  <!-- 筛选面板 -->
+  <view class="filter-panel" wx:if="{{showFilter}}">
+    <view class="filter-item">
+      <text class="filter-label">品牌</text>
+      <input class="filter-input" placeholder="请输入品牌" value="{{brand}}" bindinput="onBrandInput" />
+    </view>
+    <view class="filter-item">
+      <text class="filter-label">分类</text>
+      <picker mode="selector" range="{{categoryOptions}}" range-key="label" bindchange="onCategoryChange">
+        <view class="picker-value">{{category || '请选择分类'}}</view>
+      </picker>
+    </view>
+    <view class="filter-actions">
+      <button class="btn-reset" bindtap="resetFilter">重置</button>
+      <button class="btn-search" bindtap="doSearch">查询</button>
+    </view>
+  </view>
+
+  <!-- 状态页签 -->
+  <view class="status-tabs">
+    <view class="tab {{activeStatus === item.value ? 'active' : ''}}" wx:for="{{statusOptions}}" wx:key="value" data-status="{{item.value}}" bindtap="onStatusChange">
+      {{item.label}}
+    </view>
+  </view>
+
+  <!-- 新增按钮 -->
+  <view class="toolbar" wx:if="{{canCreate}}">
+    <view class="add-btn" bindtap="goToCreate">+ 新增商品</view>
+  </view>
+
   <!-- 商品列表 -->
   <scroll-view class="product-list" scroll-y>
-    <view class="product-card" wx:for="{{products}}" wx:key="id">
-      <view class="product-info">
-        <text class="product-name">{{item.name}}</text>
-        <text class="product-barcode">{{item.barcode}}</text>
-      </view>
-      <view class="product-price">
-        <view class="price-item">
-          <text class="label">面价</text>
-          <text class="value">¥{{item.listPrice || 0}}</text>
+    <view class="product-card" wx:for="{{products}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
+      <view class="card-header">
+        <view class="product-info">
+          <text class="product-name">{{item.name}}</text>
+          <text class="product-code">{{item.code}}</text>
         </view>
-        <view class="price-item">
-          <text class="label">经销商价</text>
-          <text class="value">¥{{item.dealerPrice || 0}}</text>
+        <text class="action-btn" catchtap="showActionSheet" data-item="{{item}}">⋮</text>
+      </view>
+      <view class="card-body">
+        <view class="info-row">
+          <text class="label">品牌</text>
+          <text class="value">{{item.brand || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">型号</text>
+          <text class="value">{{item.model || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">物料号</text>
+          <text class="value">{{item.materialNo || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">销售价</text>
+          <text class="value price">¥{{item.price || 0}}</text>
         </view>
       </view>
-      <view class="product-stock">
-        <text>库存: {{item.stock || 0}}</text>
-        <text wx:if="{{item.isDiscontinued}}" class="discontinued">已停产</text>
+      <view class="card-footer">
+        <text class="stock">库存: {{item.stock || 0}}</text>
+        <text class="status-badge {{item.isActive ? 'active' : 'inactive'}}">{{item.isActive ? '上架' : '下架'}}</text>
       </view>
     </view>
-    
+
     <view class="empty" wx:if="{{!products.length && !loading}}">
       <text>暂无商品</text>
     </view>
-    
     <view class="load-more" wx:if="{{loading}}">加载中...</view>
     <view class="load-more" wx:if="{{!hasMore && products.length}}">没有更多了</view>
   </scroll-view>
+
+  <!-- 操作菜单 -->
+  <view class="action-sheet-mask" wx:if="{{actionSheetVisible}}" bindtap="hideActionSheet"></view>
+  <view class="action-sheet {{actionSheetVisible ? 'show' : ''}}">
+    <view class="action-item" bindtap="handleEdit" wx:if="{{canEdit}}">
+      <text class="action-icon">✏️</text>
+      <text>编辑</text>
+    </view>
+    <view class="action-item" bindtap="handleToggleStatus" wx:if="{{canChangeStatus}}">
+      <text class="action-icon">{{currentProduct.isActive ? '⬇️' : '⬆️'}}</text>
+      <text>{{currentProduct.isActive ? '下架' : '上架'}}</text>
+    </view>
+    <view class="action-item warn" bindtap="handleDelete" wx:if="{{canDelete}}">
+      <text class="action-icon">🗑️</text>
+      <text>删除</text>
+    </view>
+    <view class="action-item cancel" bindtap="hideActionSheet">
+      <text>取消</text>
+    </view>
+  </view>
 </view>
