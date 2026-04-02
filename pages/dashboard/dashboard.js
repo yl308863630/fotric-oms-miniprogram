@@ -5,6 +5,8 @@ const { salesOrderApi, productApi, partnerApi } = require('../../utils/request')
 Page({
   data: {
     userInfo: null,
+    // 是否有主链观察权限
+    canViewChain: false,
     stats: {
       pendingOrders: 0,
       totalOrders: 0,
@@ -19,7 +21,28 @@ Page({
   onLoad() {
     const userInfo = wx.getStorageSync('userInfo');
     this.setData({ userInfo });
+    this.checkChainPermission();
     this.loadDashboard();
+  },
+
+  // 检查主链观察权限
+  async checkChainPermission() {
+    try {
+      const { authApi } = require('../../utils/request');
+      const userInfo = await authApi.getUserInfo();
+      const company = userInfo.companyTitle || '';
+      const role = userInfo.role || '';
+      
+      // 判断条件：(飞础科智慧科技 AND 业务员) OR (上海热像科技 AND (商务 OR 财务))
+      const canViewChain = (
+        (company.includes('飞础科智慧科技') && (role.includes('业务员') || role === 'SALES')) ||
+        (company.includes('上海热像科技') && (role.includes('商务') || role.includes('财务') || role === 'BUSINESS' || role === 'FINANCE'))
+      );
+      
+      this.setData({ canViewChain });
+    } catch (err) {
+      console.error('检查权限失败:', err);
+    }
   },
 
   onShow() {
@@ -88,6 +111,16 @@ Page({
   // 跳转到合作伙伴
   goToPartners() {
     wx.switchTab({ url: '/pages/partners/partners' });
+  },
+
+  // 跳转到主链观察（需要权限）
+  goToChainObserve() {
+    wx.navigateTo({ url: '/pages/chain/chain' });
+  },
+
+  // 跳转到合作方管理
+  goToPartnerManage() {
+    wx.navigateTo({ url: '/pages/partners/partners' });
   },
 
   // 跳转到订单详情

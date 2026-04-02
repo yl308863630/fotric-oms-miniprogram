@@ -3,12 +3,20 @@
   <view class="search-bar">
     <input class="search-input" placeholder="搜索公司名称" bindconfirm="onSearch" />
   </view>
-  
+
+  <!-- 新增按钮 -->
+  <view class="toolbar" wx:if="{{canCreate}}">
+    <view class="add-btn" bindtap="goToCreate">+ 新增合作伙伴</view>
+  </view>
+
   <scroll-view class="partner-list" scroll-y>
-    <view class="partner-card" wx:for="{{partners}}" wx:key="id">
+    <view class="partner-card" wx:for="{{partners}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
       <view class="partner-header">
         <text class="partner-title">{{item.title}}</text>
-        <text class="partner-type">{{item.type === 'A' ? '甲方' : '乙方'}}</text>
+        <view class="header-right">
+          <text class="partner-type">{{item.type === 'A' ? '甲方' : '乙方'}}</text>
+          <text class="action-btn" catchtap="showActionSheet" data-item="{{item}}">⋮</text>
+        </view>
       </view>
       <view class="partner-info">
         <view wx:if="{{item.code}}">
@@ -23,14 +31,32 @@
           <text class="label">电话：</text>
           <text class="value">{{item.contactPhone}}</text>
         </view>
+        <view wx:if="{{item.isDeliveryParty}}" class="delivery-tag">
+          <text>交付方</text>
+        </view>
       </view>
     </view>
-    
+
     <view class="empty" wx:if="{{!partners.length && !loading}}">
       <text>暂无合作伙伴</text>
     </view>
-    
     <view class="load-more" wx:if="{{loading}}">加载中...</view>
     <view class="load-more" wx:if="{{!hasMore && partners.length}}">没有更多了</view>
   </scroll-view>
+
+  <!-- 操作菜单 -->
+  <view class="action-sheet-mask" wx:if="{{actionSheetVisible}}" bindtap="hideActionSheet"></view>
+  <view class="action-sheet {{actionSheetVisible ? 'show' : ''}}">
+    <view class="action-item" bindtap="handleEdit" wx:if="{{canEdit}}">
+      <text class="action-icon">✏️</text>
+      <text>编辑</text>
+    </view>
+    <view class="action-item warn" bindtap="handleDelete" wx:if="{{canDelete}}">
+      <text class="action-icon">🗑️</text>
+      <text>删除</text>
+    </view>
+    <view class="action-item cancel" bindtap="hideActionSheet">
+      <text>取消</text>
+    </view>
+  </view>
 </view>

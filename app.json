@@ -2,6 +2,7 @@
   "pages": [
     "pages/login/login",
     "pages/dashboard/dashboard",
+    "pages/chain/chain",
     "pages/orders/orders",
     "pages/orders/detail",
     "pages/orders/create",
@@ -15,6 +16,7 @@
     "pages/products/products",
     "pages/products/detail",
     "pages/partners/partners",
+    "pages/partners/detail",
     "pages/contracts/contracts",
     "pages/settlements/settlements",
     "pages/profile/profile"

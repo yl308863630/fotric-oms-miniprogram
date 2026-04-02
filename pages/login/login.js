@@ -38,8 +38,9 @@ Page({
       return;
     }
     if (loading) return;
+    
     this.setData({ loading: true, debugInfo: '正在登录...' });
-
+    
     try {
       const res = await authApi.login({ username, password });
       console.log('登录返回完整:', JSON.stringify(res));
@@ -74,11 +75,22 @@ Page({
       }
       
       app.globalData.token = token;
+      
+      // 尝试获取完整用户信息（包括公司抬头）
+      let fullUserInfo = { ...userInfo };
+      try {
+        const userRes = await authApi.getUserInfo();
+        fullUserInfo = { ...fullUserInfo, ...userRes };
+      } catch (e) {
+        console.log('获取完整用户信息失败');
+      }
+      
       app.globalData.userInfo = {
-        id: userInfo?.id,
-        username: userInfo?.username || username,
-        realName: userInfo?.realName || userInfo?.name || username,
-        role: userInfo?.role || userInfo?.userType || 'SALES'
+        id: fullUserInfo?.id || userInfo?.id,
+        username: fullUserInfo?.username || username,
+        realName: fullUserInfo?.realName || userInfo?.realName || userInfo?.name || username,
+        role: fullUserInfo?.role || userInfo?.role || userInfo?.userType || 'SALES',
+        companyTitle: fullUserInfo?.companyTitle || ''
       };
       
       wx.setStorageSync('token', token);
@@ -88,6 +100,7 @@ Page({
       setTimeout(() => {
         wx.switchTab({ url: '/pages/dashboard/dashboard' });
       }, 1000);
+      
     } catch (err) {
       console.error('登录失败:', err);
       this.setData({ debugInfo: '错误: ' + (err.message || err) });

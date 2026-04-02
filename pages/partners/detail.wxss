@@ -1,0 +1,150 @@
+/* 合作伙伴详情/新建/编辑页面 */
+.detail-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding-bottom: 160rpx;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400rpx;
+  color: #999;
+  font-size: 28rpx;
+}
+
+.form-container {
+  height: 100vh;
+}
+
+.section {
+  background: #fff;
+  border-radius: 16rpx;
+  margin-bottom: 20rpx;
+  padding: 24rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+/* 表单项 */
+.form-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.form-item:last-child {
+  border-bottom: none;
+}
+
+.form-item .required {
+  color: #ff4d4f;
+  margin-right: 8rpx;
+}
+
+.form-item .label {
+  width: 180rpx;
+  font-size: 28rpx;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.form-item .input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+  text-align: right;
+}
+
+.form-item .value {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+  text-align: right;
+}
+
+.form-item textarea, .form-item .textarea {
+  flex: 1;
+  min-height: 120rpx;
+  font-size: 28rpx;
+  color: #333;
+  background: #f5f5f5;
+  border-radius: 8rpx;
+  padding: 16rpx;
+}
+
+/* 类型选择 */
+.type-selector {
+  display: flex;
+  gap: 16rpx;
+}
+
+.type-btn {
+  padding: 12rpx 32rpx;
+  font-size: 26rpx;
+  border-radius: 8rpx;
+  background: #f0f0f0;
+  color: #666;
+}
+
+.type-btn.active {
+  background: #1890ff;
+  color: #fff;
+}
+
+/* 操作按钮 */
+.action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx;
+  background: #fff;
+  box-shadow: 0 -2rpx 10rpx rgba(0,0,0,0.1);
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+}
+
+.btn-submit, .btn-edit, .btn-delete {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  font-size: 30rpx;
+  border-radius: 44rpx;
+  border: none;
+}
+
+.btn-submit {
+  background: #1890ff;
+  color: #fff;
+}
+
+.btn-submit[disabled] {
+  background: #a0cfff;
+}
+
+.btn-edit {
+  background: #1890ff;
+  color: #fff;
+}
+
+.btn-delete {
+  background: #fff;
+  color: #ff4d4f;
+  border: 2rpx solid #ff4d4f;
+}
+
+.btn-submit::after, .btn-edit::after, .btn-delete::after {
+  border: none;
+}

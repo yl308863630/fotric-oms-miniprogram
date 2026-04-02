@@ -31,6 +31,10 @@
       <view class="entry-icon">📃</view>
       <text class="entry-label">合同</text>
     </view>
+    <view class="entry-item" bindtap="goToChainObserve" wx:if="{{canViewChain}}">
+      <view class="entry-icon chain">🔗</view>
+      <text class="entry-label">主链观察</text>
+    </view>
   </view>
 
   <!-- 统计卡片 -->
