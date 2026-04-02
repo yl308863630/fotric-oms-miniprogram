@@ -1,0 +1,87 @@
+<!-- 商机列表 -->
+<view class="opportunity-page">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input class="search-input" placeholder="搜索客户名称/标题/联系人/电话" bindconfirm="onSearch" />
+  </view>
+
+  <!-- 状态页签 -->
+  <view class="status-tabs">
+    <view class="tab {{stageFilter === item.value ? 'active' : ''}}" wx:for="{{stageOptions}}" wx:key="value" data-stage="{{item.value}}" bindtap="onStageChange">
+      {{item.label}}
+    </view>
+  </view>
+
+  <!-- 新增按钮 -->
+  <view class="toolbar" wx:if="{{canCreate}}">
+    <view class="add-btn" bindtap="goToCreate">+ 新增商机</view>
+  </view>
+
+  <!-- 商机列表 -->
+  <scroll-view class="opportunity-list" scroll-y>
+    <view class="opportunity-card" wx:for="{{opportunities}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
+      <view class="card-header">
+        <view class="header-info">
+          <text class="title">{{item.title}}</text>
+          <text class="customer-code">{{item.customerCode}}</text>
+        </view>
+        <view class="header-right">
+          <text class="stage-tag {{item.stage}}">{{item.stage || '跟进中'}}</text>
+          <text class="action-btn" catchtap="showActionSheet" data-item="{{item}}">⋮</text>
+        </view>
+      </view>
+      <view class="card-body">
+        <view class="info-row">
+          <text class="label">客户名称</text>
+          <text class="value">{{item.customerName || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">联系人</text>
+          <text class="value">{{item.contact || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">电话</text>
+          <text class="value">{{item.phone || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">商品型号</text>
+          <text class="value">{{item.productModel || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">预计金额</text>
+          <text class="value price">¥{{item.estimatedAmount || 0}}</text>
+        </view>
+      </view>
+      <view class="card-footer">
+        <text class="time">{{item.createTime}}</text>
+        <text class="sales">{{item.ecommerceSales || item.offlineSales || '-'}}</text>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{!opportunities.length && !loading}}">
+      <text>暂无商机</text>
+    </view>
+    <view class="load-more" wx:if="{{loading}}">加载中...</view>
+    <view class="load-more" wx:if="{{!hasMore && opportunities.length}}">没有更多了</view>
+  </scroll-view>
+
+  <!-- 操作菜单 -->
+  <view class="action-sheet-mask" wx:if="{{actionSheetVisible}}" bindtap="hideActionSheet"></view>
+  <view class="action-sheet {{actionSheetVisible ? 'show' : ''}}">
+    <view class="action-item" bindtap="handleEdit" wx:if="{{canEdit}}">
+      <text class="action-icon">✏️</text>
+      <text>编辑</text>
+    </view>
+    <view class="action-item" bindtap="handleGenerateQuotation">
+      <text class="action-icon">📄</text>
+      <text>生成报价单</text>
+    </view>
+    <view class="action-item warn" bindtap="handleDelete" wx:if="{{canDelete}}">
+      <text class="action-icon">🗑️</text>
+      <text>删除</text>
+    </view>
+    <view class="action-item cancel" bindtap="hideActionSheet">
+      <text>取消</text>
+    </view>
+  </view>
+</view>

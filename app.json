@@ -7,6 +7,8 @@
     "pages/orders/create",
     "pages/purchase-orders/purchase-orders",
     "pages/purchase-orders/detail",
+    "pages/opportunity/opportunity",
+    "pages/opportunity/detail",
     "pages/reconciliation/create",
     "pages/pending-assign/list",
     "pages/contract-templates/list",

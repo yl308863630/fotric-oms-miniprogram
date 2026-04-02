@@ -1,0 +1,195 @@
+<!-- 商机详情/新建/编辑页面 -->
+<view class="detail-page">
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+  
+  <scroll-view wx:else class="form-container" scroll-y>
+    <!-- 基本信息 -->
+    <view class="section">
+      <view class="section-title">基本信息</view>
+      
+      <view class="form-item">
+        <text class="required">*</text>
+        <text class="label">商机标题</text>
+        <input class="input" value="{{formData.title}}" data-field="title" bindinput="onInput" placeholder="请输入商机标题" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">客户编码</text>
+        <input class="input" value="{{formData.customerCode}}" data-field="customerCode" bindinput="onInput" placeholder="请输入客户编码" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">商机分类</text>
+        <picker mode="selector" range="{{categoryOptions}}" range-key="label" value="{{categoryIndex}}" bindchange="onPickerChange" data-field="category" disabled="{{action === 'view'}}">
+          <view class="picker-value">{{formData.categoryLabel || '请选择'}}</view>
+        </picker>
+      </view>
+      
+      <view class="form-item">
+        <text class="label">客户来源</text>
+        <picker mode="selector" range="{{sourceOptions}}" range-key="label" value="{{sourceIndex}}" bindchange="onPickerChange" data-field="source" disabled="{{action === 'view'}}">
+          <view class="picker-value">{{formData.sourceLabel || '请选择'}}</view>
+        </picker>
+      </view>
+    </view>
+
+    <!-- 客户信息 -->
+    <view class="section">
+      <view class="section-title">客户信息</view>
+      
+      <view class="form-item">
+        <text class="required">*</text>
+        <text class="label">客户名称</text>
+        <input class="input" value="{{formData.customerName}}" data-field="customerName" bindinput="onInput" placeholder="请输入客户名称" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">询价抬头</text>
+        <input class="input" value="{{formData.inquiryHeader}}" data-field="inquiryHeader" bindinput="onInput" placeholder="请输入询价抬头" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">下单抬头</text>
+        <input class="input" value="{{formData.orderHeader}}" data-field="orderHeader" bindinput="onInput" placeholder="请输入下单抬头" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">联系人</text>
+        <input class="input" value="{{formData.contact}}" data-field="contact" bindinput="onInput" placeholder="请输入联系人" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">联系电话</text>
+        <input class="input" value="{{formData.phone}}" data-field="phone" bindinput="onInput" placeholder="请输入联系电话" disabled="{{action === 'view'}}" />
+      </view>
+    </view>
+
+    <!-- 商品信息 -->
+    <view class="section">
+      <view class="section-title">商品信息</view>
+      
+      <view class="form-item">
+        <text class="label">商品型号</text>
+        <input class="input" value="{{formData.productModel}}" data-field="productModel" bindinput="onInput" placeholder="请输入商品型号" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">数量</text>
+        <input class="input" type="number" value="{{formData.quantity}}" data-field="quantity" bindinput="onNumberInput" placeholder="请输入数量" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">预计销售金额</text>
+        <input class="input" type="digit" value="{{formData.estimatedAmount}}" data-field="estimatedAmount" bindinput="onNumberInput" placeholder="请输入预计金额" disabled="{{action === 'view'}}" />
+      </view>
+    </view>
+
+    <!-- 平台信息 -->
+    <view class="section">
+      <view class="section-title">平台信息</view>
+      
+      <view class="form-item">
+        <text class="label">电商平台</text>
+        <picker mode="selector" range="{{platformOptions}}" range-key="label" value="{{platformIndex}}" bindchange="onPickerChange" data-field="platform" disabled="{{action === 'view'}}">
+          <view class="picker-value">{{formData.platform || '请选择'}}</view>
+        </picker>
+      </view>
+      
+      <view class="form-item">
+        <text class="label">服务商抬头</text>
+        <input class="input" value="{{formData.serviceProvider}}" data-field="serviceProvider" bindinput="onInput" placeholder="请输入服务商抬头" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">出货渠道抬头</text>
+        <input class="input" value="{{formData.shippingChannel}}" data-field="shippingChannel" bindinput="onInput" placeholder="请输入出货渠道抬头" disabled="{{action === 'view'}}" />
+      </view>
+    </view>
+
+    <!-- 项目信息 -->
+    <view class="section">
+      <view class="section-title">项目信息</view>
+      
+      <view class="form-item">
+        <text class="label">预计签单日期</text>
+        <picker mode="date" value="{{formData.expectedDate}}" bindchange="onDateChange" disabled="{{action === 'view'}}">
+          <view class="picker-value">{{formData.expectedDate || '请选择日期'}}</view>
+        </picker>
+      </view>
+      
+      <view class="form-item">
+        <text class="label">所在地区</text>
+        <input class="input" value="{{formData.region}}" data-field="region" bindinput="onInput" placeholder="请输入所在地区" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">所属行业</text>
+        <input class="input" value="{{formData.industry}}" data-field="industry" bindinput="onInput" placeholder="请输入所属行业" disabled="{{action === 'view'}}" />
+      </view>
+    </view>
+
+    <!-- 商机信息 -->
+    <view class="section">
+      <view class="section-title">商机信息</view>
+      
+      <view class="form-item">
+        <text class="label">解决哪些问题</text>
+        <textarea class="textarea" value="{{formData.problemSolved}}" data-field="problemSolved" bindinput="onInput" placeholder="请输入解决哪些问题" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">采购预算</text>
+        <input class="input" value="{{formData.budget}}" data-field="budget" bindinput="onInput" placeholder="请输入采购预算" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">竞争对手</text>
+        <input class="input" value="{{formData.competitor}}" data-field="competitor" bindinput="onInput" placeholder="请输入竞争对手" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">电商业务员</text>
+        <input class="input" value="{{formData.ecommerceSales}}" data-field="ecommerceSales" bindinput="onInput" placeholder="请输入电商业务员" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">线下配合销售</text>
+        <input class="input" value="{{formData.offlineSales}}" data-field="offlineSales" bindinput="onInput" placeholder="请输入线下配合销售" disabled="{{action === 'view'}}" />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">业务阶段</text>
+        <picker mode="selector" range="{{stageOptions}}" range-key="label" value="{{stageIndex}}" bindchange="onPickerChange" data-field="stage" disabled="{{action === 'view'}}">
+          <view class="picker-value">{{formData.stage || '请选择'}}</view>
+        </picker>
+      </view>
+      
+      <view class="form-item">
+        <text class="label">交货期</text>
+        <input class="input" value="{{formData.deliveryPeriod}}" data-field="deliveryPeriod" bindinput="onInput" placeholder="如：4-6周" disabled="{{action === 'view'}}" />
+      </view>
+    </view>
+
+    <!-- 跟进记录 -->
+    <view class="section">
+      <view class="section-title">跟进记录</view>
+      
+      <view class="form-item">
+        <text class="label">最新跟进记录</text>
+        <textarea class="textarea" value="{{formData.latestFollowUpRecord}}" data-field="latestFollowUpRecord" bindinput="onInput" placeholder="请输入最新跟进记录" disabled="{{action === 'view'}}" />
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-bar" wx:if="{{action !== 'view'}}">
+      <button class="btn-submit" bindtap="handleSubmit" disabled="{{submitting}}">
+        {{submitting ? '提交中...' : (action === 'create' ? '新增商机' : '保存修改')}}
+      </button>
+    </view>
+    
+    <view class="action-bar" wx:if="{{action === 'view' && canSave}}">
+      <button class="btn-edit" bindtap="handleEdit">编辑商机</button>
+      <button class="btn-delete" bindtap="handleDelete">删除商机</button>
+    </view>
+  </scroll-view>
+</view>

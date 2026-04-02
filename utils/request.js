@@ -71,6 +71,15 @@ export const partnerApi = {
   delete: (id) => request(`/api/partner-info/${id}`, { method: 'DELETE' }),
 };
 
+// 商机 API
+export const opportunityApi = {
+  list: (params) => request('/api/opportunities', { method: 'GET', data: params }),
+  get: (id) => request(`/api/opportunities/${id}`, { method: 'GET' }),
+  create: (data) => request('/api/opportunities', { method: 'POST', data }),
+  update: (data) => request(`/api/opportunities/${data.id}`, { method: 'PUT', data }),
+  delete: (id) => request(`/api/opportunities/${id}`, { method: 'DELETE' }),
+};
+
 // 采购订单 API
 export const purchaseOrderApi = {
   list: (params) => request('/api/purchase-orders', { method: 'GET', data: params }),
